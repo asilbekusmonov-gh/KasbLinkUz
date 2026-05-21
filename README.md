@@ -124,7 +124,7 @@ Once running, interactive documentation is available at:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/kasblink.git
+git clone https://github.com/asilbekusmonov-gh/kasblink.git
 cd kasblink
 ```
 
