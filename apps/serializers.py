@@ -1,4 +1,5 @@
-from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+from rest_framework.fields import ImageField as DRFImageField, CharField
 from rest_framework.serializers import ModelSerializer
 
 from apps.models import (
@@ -9,18 +10,41 @@ from apps.models.users import City, District
 
 
 class UserSerializer(ModelSerializer):
+    password = CharField(write_only=True)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'phone_number', 'profile_image']
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ['id', 'username', 'email', 'password', 'first_name',
+                  'last_name', 'role', 'phone_number', 'profile_image']
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'phone_number': {'required': False},
+            'first_name': {'required': False},
+            'last_name': {'required': False},
+            'profile_image': {'required': False},
+        }
+
+    def create(self, validated_data):
+        user = User.objects.create_user(**validated_data)
+        return user
 
 
 class WorkerProfileSerializer(ModelSerializer):
+    profile_image = DRFImageField(required=False, use_url=True)
     user = UserSerializer(read_only=True)
 
     class Meta:
         model = WorkerProfile
         fields = '__all__'
+
+    def validate(self, data):
+        request = self.context.get('request')
+
+        if request and request.method == 'POST':
+            if WorkerProfile.objects.filter(user=request.user).exists():
+                raise ValidationError('User can only have one worker profile')
+
+        return data
 
 
 class CityModelSerializer(ModelSerializer):
@@ -52,6 +76,11 @@ class ServiceSerializer(ModelSerializer):
         model = Service
         fields = '__all__'
 
+    def validate_min_price(self, value):
+        if value <= 0:
+            raise ValidationError('Minimum price cannot be negative')
+        return value
+
 
 class ConversationSerializer(ModelSerializer):
     class Meta:
@@ -63,6 +92,20 @@ class MessageSerializer(ModelSerializer):
     class Meta:
         model = Message
         fields = '__all__'
+
+    def validate(self, data):
+        request = self.context.get('request')
+        conversation = data.get('conversation')
+        if conversation and request:
+
+            is_participant = (
+                    conversation.client == request.user or conversation.worker == request.user
+            )
+
+            if not is_participant:
+                raise ValidationError('You are not participant of this conversation')
+
+        return data
 
 
 class OrderImageSerializer(ModelSerializer):
@@ -78,6 +121,19 @@ class OrderSerializer(ModelSerializer):
         model = Order
         fields = '__all__'
 
+    def validate(self, data):
+        service = data.get('service')
+        request = self.context.get('request')
+
+        if request and service:
+            if not service.active:
+                raise ValidationError('You can not  place order on inactive service')
+
+            if Order.objects.filter(client=request.user, service=service).exists():
+                raise ValidationError('Client can not order  Their own service')
+
+        return data
+
 
 class ReviewImageSerializer(ModelSerializer):
     class Meta:
@@ -91,6 +147,22 @@ class ReviewSerializer(ModelSerializer):
     class Meta:
         model = Review
         fields = '__all__'
+
+    def validate(self, data):
+        order = data.get('order')
+        request = self.context.get('request')
+
+        if order and request:
+            if order.status != 'completed':
+                raise ValidationError('Order is not completed yet')
+
+        if Review.objects.filter(client=request.user, order=order).exists():
+            raise ValidationError('You can not review twice')
+
+        if order.client != request.user:
+            raise ValidationError('You can review your own review')
+
+        return data
 
 
 class FavouriteSerializer(ModelSerializer):

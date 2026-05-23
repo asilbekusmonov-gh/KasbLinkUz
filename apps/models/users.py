@@ -19,7 +19,7 @@ class User(AbstractUser):
 
 
 class WorkerProfile(Model):
-    profile_image = ImageField(upload_to='users/%Y/%m/%d')
+    profile_image = ImageField(upload_to='users/%Y/%m/%d', null=True, blank=True)
     bio = CharField(max_length=255)
     work_start_time = TimeField()
     work_end_time = TimeField()

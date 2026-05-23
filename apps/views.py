@@ -1,23 +1,28 @@
-from rest_framework.exceptions import ValidationError
+from django.db.models import Q
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import CreateAPIView
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet, ReadOnlyModelViewSet
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.models import (
     Category, Service, Conversation, Message, Order, OrderImage,
-    ReviewImage, Favourite, WorkerProfile, Portfolio
+    ReviewImage, Favourite, WorkerProfile, Portfolio, Review, User
 )
 from apps.permissions import IsClient, IsOwner, IsWorker
 from apps.serializers import (
     CategorySerializer, ServiceSerializer, ConversationSerializer, MessageSerializer,
     OrderSerializer, OrderImageSerializer, ReviewImageSerializer,
-    FavouriteSerializer, UserSerializer, WorkerProfileSerializer, PortfolioSerializer
+    FavouriteSerializer, UserSerializer, WorkerProfileSerializer, PortfolioSerializer, ReviewSerializer
 )
 
 
 class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
+    queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
@@ -31,10 +36,11 @@ class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelM
 
 
 class WorkerProfileViewSet(ModelViewSet):
+    queryset = WorkerProfile.objects.all()
     serializer_class = WorkerProfileSerializer
 
     def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'create']:
+        if self.action in ['update', 'partial_update', 'create', 'destroy']:
             return [IsAuthenticated(), IsOwner()]
 
         return [AllowAny(), ]
@@ -47,9 +53,17 @@ class WorkerProfileViewSet(ModelViewSet):
 
 
 class PortfolioViewSet(ModelViewSet):
+    queryset = Portfolio.objects.all()
     serializer_class = PortfolioSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Portfolio.objects.none()
+
+        if not self.request.user.is_authenticated:
+            return Portfolio.objects.none()
+
         return Portfolio.objects.filter(worker__user=self.request.user)
 
     def perform_create(self, serializer):
@@ -64,6 +78,7 @@ class CategoryViewSet(ReadOnlyModelViewSet):
 
 
 class ServiceViewSet(ModelViewSet):
+    queryset = Service.objects.all()
     serializer_class = ServiceSerializer
 
     def get_permissions(self):
@@ -72,8 +87,11 @@ class ServiceViewSet(ModelViewSet):
         return [IsAuthenticated(), IsWorker()]
 
     def get_queryset(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return Service.objects.filter(worker__user=self.request.user)
+        if getattr(self, 'swagger_fake_view', False):
+            return Service.objects.none()
+        if self.request.user.is_authenticated:
+            if self.action in ['create', 'update', 'partial_update', 'destroy']:
+                return Service.objects.filter(worker__user=self.request.user)
 
         return Service.objects.select_related('worker', 'category').all()
 
@@ -82,28 +100,28 @@ class ServiceViewSet(ModelViewSet):
 
 
 class ConversationViewSet(ModelViewSet):
+    queryset = Conversation.objects.all()
+
     serializer_class = ConversationSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
         return Conversation.objects.filter(
-            client=user
-        ) | Conversation.objects.filter(
-            worker=user
+            Q(client=user) | Q(worker=user)
         )
 
 
 class MessageViewSet(ModelViewSet):
+    queryset = Message.objects.all()
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
         return Message.objects.filter(
-            conversation__client=user
-        ) | Message.objects.filter(
-            conversation__worker=user
+            Q(conversation__client=user) |
+            Q(conversation__worker=user)
         )
 
     def perform_create(self, serializer):
@@ -114,7 +132,14 @@ class OrderViewSet(ModelViewSet):
     serializer_class = OrderSerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Order.objects.none()
+
         user = self.request.user
+
+        if not user.is_authenticated:
+            return Order.objects.none()
+
         if user.role == 'worker':
             return Order.objects.filter(worker__user=user)
 
@@ -149,6 +174,7 @@ class OrderViewSet(ModelViewSet):
 
 
 class OrderImageViewSet(ModelViewSet):
+    queryset = OrderImage.objects.all()
     serializer_class = OrderImageSerializer
 
     def get_queryset(self):
@@ -156,17 +182,19 @@ class OrderImageViewSet(ModelViewSet):
 
 
 class ReviewViewSet(GenericViewSet, mixins.CreateModelMixin, mixins.ListModelMixin):
-    serializer_class = ReviewImageSerializer
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return ReviewImage.objects.filter(client=self.request.user)
+        return Review.objects.filter(client=self.request.user)
 
     def perform_create(self, serializer):
         return serializer.save(client=self.request.user)
 
 
 class ReviewImageViewSet(ModelViewSet):
+    queryset = ReviewImage.objects.all()
     serializer_class = ReviewImageSerializer
     permission_classes = [IsAuthenticated]
 
@@ -178,11 +206,28 @@ class FavouriteViewSet(viewsets.GenericViewSet,
                        mixins.CreateModelMixin,
                        mixins.DestroyModelMixin,
                        mixins.ListModelMixin):
+    queryset = Favourite.objects.all()
     serializer_class = FavouriteSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Favourite.objects.filter(user=self.request.user)
+        return Favourite.objects.filter(client=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save(client=self.request.user)
+
+
+class RegisterView(CreateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+            }, status=201)
+        return Response(serializer.errors, status=400)
