@@ -78,7 +78,7 @@ class ServiceSerializer(ModelSerializer):
 
     def validate_min_price(self, value):
         if value <= 0:
-            raise ValidationError('Minimum price cannot be negative')
+            raise ValidationError('Minimum price cannot be negative or zero')
         return value
 
 

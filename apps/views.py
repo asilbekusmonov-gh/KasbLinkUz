@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import status
 
 from apps.models import (
     Category, Service, Conversation, Message, Order, OrderImage,
@@ -19,6 +20,7 @@ from apps.serializers import (
     OrderSerializer, OrderImageSerializer, ReviewImageSerializer,
     FavouriteSerializer, UserSerializer, WorkerProfileSerializer, PortfolioSerializer, ReviewSerializer
 )
+from apps.tasks import send_mail_task, send_order_placed_email, send_order_status_email
 
 
 class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
@@ -96,7 +98,8 @@ class ServiceViewSet(ModelViewSet):
         return Service.objects.select_related('worker', 'category').all()
 
     def perform_create(self, serializer):
-        return serializer.save(worker=self.request.user.worker_profile)
+        worker_profile = self.request.user.worker_profile
+        return serializer.save(worker=worker_profile)
 
 
 class ConversationViewSet(ModelViewSet):
@@ -146,31 +149,44 @@ class OrderViewSet(ModelViewSet):
         return Order.objects.filter(client=user)
 
     def perform_create(self, serializer):
-        return serializer.save(client=self.request.user)
+        order = serializer.save(client=self.request.user)  # save and store it
+        send_order_placed_email.delay(order.id)
 
-    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsWorker])
-    def accepted(self, request, pk=None):
-        order = self.get_object()
-        order.status = 'accepted'
-        order.save()
-        return Response({'status': 'accepted'})
 
-    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsWorker])
-    def completed(self, request, pk=None):
-        order = self.get_object()
-        order.status = 'completed'
-        order.save()
-        return Response({'status': 'completed'})
+@action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsWorker])
+def accepted(self, request, pk=None):
+    order = self.get_object()
+    order.status = 'accepted'
+    order.save()
 
-    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsClient])
-    def cancelled(self, request, pk=None):
-        order = self.get_object()
-        if order.status == 'completed':
-            raise ValidationError('order already completed!')
+    send_order_status_email.delay(order.id, 'accepted')
 
-        order.status = 'cancelled'
-        order.save()
-        return Response({'status': 'cancelled'})
+    return Response({'status': 'accepted'})
+
+
+@action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsWorker])
+def completed(self, request, pk=None):
+    order = self.get_object()
+    order.status = 'completed'
+    order.save()
+
+    send_order_status_email.delay(order.id, 'completed')
+
+    return Response({'status': 'completed'})
+
+
+@action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsClient])
+def cancelled(self, request, pk=None):
+    order = self.get_object()
+    if order.status == 'completed':
+        raise ValidationError('order already completed!')
+
+    order.status = 'cancelled'
+    order.save()
+
+    send_order_status_email.delay(order.id, 'cancelled')
+
+    return Response({'status': 'cancelled'})
 
 
 class OrderImageViewSet(ModelViewSet):
@@ -223,11 +239,23 @@ class RegisterView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-            }, status=201)
-        return Response(serializer.errors, status=400)
+
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.save()
+
+        send_mail_task.delay(user.id)
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response(
+            {
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                },
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            },
+            status=status.HTTP_201_CREATED
+        )
