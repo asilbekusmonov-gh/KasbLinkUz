@@ -2,6 +2,7 @@ from django.db.models import Q
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import CreateAPIView
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -10,6 +11,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet, ReadOnlyModelV
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 
+from apps.filters import WorkerFilter
 from apps.models import (
     Category, Service, Conversation, Message, Order, OrderImage,
     ReviewImage, Favourite, WorkerProfile, Portfolio, Review, User
@@ -40,6 +42,11 @@ class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelM
 class WorkerProfileViewSet(ModelViewSet):
     queryset = WorkerProfile.objects.all()
     serializer_class = WorkerProfileSerializer
+
+    filter_backends = [OrderingFilter, SearchFilter]
+    filterset_class = WorkerFilter
+    search_fields = ['category__name', ]
+    ordering_fields = ['rating', ]
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'create', 'destroy']:
