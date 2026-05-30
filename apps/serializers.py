@@ -15,13 +15,13 @@ class UserSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'password', 'first_name',
-                  'last_name', 'role', 'phone_number', 'profile_image']
+                  'last_name', 'role', 'phone_number']
         extra_kwargs = {
             'password': {'write_only': True},
             'phone_number': {'required': False},
             'first_name': {'required': False},
             'last_name': {'required': False},
-            'profile_image': {'required': False},
+            # 'profile_image': {'required': False},
         }
 
     def create(self, validated_data):
@@ -30,7 +30,7 @@ class UserSerializer(ModelSerializer):
 
 
 class WorkerProfileSerializer(ModelSerializer):
-    profile_image = DRFImageField(required=False, use_url=True)
+    # profile_image = DRFImageField(required=False, use_url=True)
     user = UserSerializer(read_only=True)
 
     class Meta:

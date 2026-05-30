@@ -14,12 +14,12 @@ class User(AbstractUser):
 
     role = CharField(max_length=15, choices=Role.choices, default=Role.CUSTOMER)
     phone_number = CharField(unique=True, max_length=9)
-    profile_image = ImageField(upload_to='users/%Y/%m/%d', null=True)
+    # profile_image = ImageField(upload_to='users/%Y/%m/%d', null=True, blank=True)
     objects = CustomUserManager()
 
 
 class WorkerProfile(Model):
-    profile_image = ImageField(upload_to='users/%Y/%m/%d', null=True, blank=True)
+    # profile_image = ImageField(upload_to='users/%Y/%m/%d', null=True, blank=True)
     bio = CharField(max_length=255)
     work_start_time = TimeField()
     work_end_time = TimeField()

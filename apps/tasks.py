@@ -52,5 +52,5 @@ def send_order_status_email(order_id, new_status):
         subject=f'Order {new_status.capitalize()}',
         message=message,
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[order.service.email],
+        recipient_list=[order.service.worker.user.email],
     )
