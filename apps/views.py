@@ -29,6 +29,7 @@ class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelM
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_object(self):
         return self.request.user
@@ -42,6 +43,7 @@ class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelM
 class WorkerProfileViewSet(ModelViewSet):
     queryset = WorkerProfile.objects.all()
     serializer_class = WorkerProfileSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     filter_backends = [OrderingFilter, SearchFilter]
     filterset_class = WorkerFilter
@@ -144,56 +146,42 @@ class OrderViewSet(ModelViewSet):
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Order.objects.none()
-
         user = self.request.user
-
         if not user.is_authenticated:
             return Order.objects.none()
-
         if user.role == 'worker':
-            return Order.objects.filter(worker__user=user)
-
+            return Order.objects.filter(service__worker__user=user)
         return Order.objects.filter(client=user)
 
     def perform_create(self, serializer):
-        order = serializer.save(client=self.request.user)  # save and store it
+        order = serializer.save(client=self.request.user)
         send_order_placed_email.delay(order.id)
 
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsWorker])
+    def accepted(self, request, pk=None):
+        order = self.get_object()
+        order.status = 'accepted'
+        order.save()
+        send_order_status_email.delay(order.id, 'accepted')
+        return Response({'status': 'accepted'})
 
-@action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsWorker])
-def accepted(self, request, pk=None):
-    order = self.get_object()
-    order.status = 'accepted'
-    order.save()
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsWorker])
+    def completed(self, request, pk=None):
+        order = self.get_object()
+        order.status = 'completed'
+        order.save()
+        send_order_status_email.delay(order.id, 'completed')
+        return Response({'status': 'completed'})
 
-    send_order_status_email.delay(order.id, 'accepted')
-
-    return Response({'status': 'accepted'})
-
-
-@action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsWorker])
-def completed(self, request, pk=None):
-    order = self.get_object()
-    order.status = 'completed'
-    order.save()
-
-    send_order_status_email.delay(order.id, 'completed')
-
-    return Response({'status': 'completed'})
-
-
-@action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsClient])
-def cancelled(self, request, pk=None):
-    order = self.get_object()
-    if order.status == 'completed':
-        raise ValidationError('order already completed!')
-
-    order.status = 'cancelled'
-    order.save()
-
-    send_order_status_email.delay(order.id, 'cancelled')
-
-    return Response({'status': 'cancelled'})
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsClient])
+    def cancelled(self, request, pk=None):
+        order = self.get_object()
+        if order.status == 'completed':
+            raise ValidationError('Order is already completed.')
+        order.status = 'cancelled'
+        order.save()
+        send_order_status_email.delay(order.id, 'cancelled')
+        return Response({'status': 'cancelled'})
 
 
 class OrderImageViewSet(ModelViewSet):

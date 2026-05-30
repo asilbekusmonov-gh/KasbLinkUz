@@ -8,4 +8,4 @@ class WorkerFilter(FilterSet):
 
     class Meta:
         model = WorkerProfile
-        fields = ['worker_services__category', 'city']
+        fields = ['worker_services__category', 'cities__districts']
