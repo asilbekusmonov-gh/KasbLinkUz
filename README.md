@@ -13,9 +13,17 @@ Clients discover and hire verified workers. Built with Django REST Framework.
 [![Celery](https://img.shields.io/badge/Celery-5.x-green?logo=celery)](https://docs.celeryq.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[API Docs](#api-docs) · [Quick Start](#quick-start) · [Features](#features) · [Architecture](#architecture)
-
 </div>
+
+---
+
+## 🌐 Live Demo
+
+| | URL |
+|---|---|
+| API Base | https://kasblinkuz-production.up.railway.app |
+| Swagger Docs | https://kasblinkuz-production.up.railway.app/api/schema/swagger-ui/ |
+| Admin Panel | https://kasblinkuz-production.up.railway.app/admin/ |
 
 ---
 
@@ -54,7 +62,6 @@ This repository is the **backend API only**. Designed to be consumed by any fron
 - Filtering, searching, and ordering on all list endpoints
 - Pagination on all list responses
 - Detailed validation error messages
-- Consistent JSON response structure
 
 ### Security
 - JWT with short-lived access tokens and refresh rotation
@@ -86,7 +93,7 @@ This repository is the **backend API only**. Designed to be consumed by any fron
 | Auth | JWT via `djangorestframework-simplejwt` |
 | API Docs | `drf-spectacular` (Swagger + ReDoc) |
 | Filtering | `django-filter` |
-| Environment | `django-environ` |
+| Deployment | Railway |
 
 ---
 
@@ -131,13 +138,11 @@ kasblink/
 
 ## API Docs
 
-Once running, interactive documentation is available at:
-
 | Format | URL |
 |---|---|
-| Swagger UI | `http://localhost:8000/api/schema/swagger-ui/` |
-| ReDoc | `http://localhost:8000/api/schema/redoc/` |
-| OpenAPI JSON | `http://localhost:8000/api/schema/` |
+| Swagger UI (Live) | https://kasblinkuz-production.up.railway.app/api/schema/swagger-ui/ |
+| Swagger UI (Local) | http://localhost:8000/api/schema/swagger-ui/ |
+| ReDoc (Local) | http://localhost:8000/api/schema/redoc/ |
 
 ---
 
@@ -153,8 +158,8 @@ Once running, interactive documentation is available at:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/asilbekusmonov/kasblink.git
-cd kasblink
+git clone https://github.com/asilbekusmonov-gh/KasbLinkUz.git
+cd KasbLinkUz
 ```
 
 ### 2. Create virtual environment
@@ -326,8 +331,8 @@ See `.env.example` for full template.
 - [x] Swagger / ReDoc API documentation
 - [x] Celery + Redis — async background tasks
 - [x] Email notifications — order lifecycle + welcome email
-- [ ] File uploads — portfolio images, service cover, profile image
-- [ ] Deploy to Railway / Render — live URL
+- [x] File uploads — portfolio images, service cover, profile image
+- [x] Deployed to Railway — live URL
 - [ ] Tests with pytest — target 80%+ coverage
 - [ ] Docker + Docker Compose
 - [ ] GitHub Actions CI/CD
@@ -343,5 +348,5 @@ See `.env.example` for full template.
 ---
 
 <div align="center">
-  Built by <a href="https://github.com/asilbekusmonov">Asilbek Usmonov</a> · Tashkent, Uzbekistan
+  Built by <a href="https://github.com/asilbekusmonov-gh">Asilbek Usmonov</a> · Tashkent, Uzbekistan
 </div>
