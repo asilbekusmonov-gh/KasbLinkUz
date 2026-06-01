@@ -21,7 +21,7 @@ class UserSerializer(ModelSerializer):
             'phone_number': {'required': False},
             'first_name': {'required': False},
             'last_name': {'required': False},
-            # 'profile_image': {'required': False},
+            'profile_image': {'required': False},
         }
 
     def create(self, validated_data):
@@ -30,7 +30,7 @@ class UserSerializer(ModelSerializer):
 
 
 class WorkerProfileSerializer(ModelSerializer):
-    # profile_image = DRFImageField(required=False, use_url=True)
+    profile_image = DRFImageField(required=False, use_url=True)
     user = UserSerializer(read_only=True)
 
     class Meta:
