@@ -26,8 +26,9 @@ from apps.serializers import (
 from apps.tasks import send_mail_task, send_order_placed_email, send_order_status_email
 
 
-
-@extend_schema(summary='User/s')
+@extend_schema(
+    tags=["Users"]
+)
 class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -42,7 +43,10 @@ class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelM
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
-@extend_schema(summary='WorkerProfile')
+
+@extend_schema(
+    tags=['WorkerProfile']
+)
 class WorkerProfileViewSet(ModelViewSet):
     queryset = WorkerProfile.objects.all()
     serializer_class = WorkerProfileSerializer
@@ -65,7 +69,10 @@ class WorkerProfileViewSet(ModelViewSet):
     def perform_create(self, serializer):
         return serializer.save(user=self.request.user)
 
-@extend_schema(summary='WorkerPortfolio')
+
+@extend_schema(
+    tags=["Portfolio"]
+)
 class PortfolioViewSet(ModelViewSet):
     queryset = Portfolio.objects.all()
     serializer_class = PortfolioSerializer
@@ -84,13 +91,17 @@ class PortfolioViewSet(ModelViewSet):
         worker_profile = self.request.user.worker_profile
         serializer.save(worker=worker_profile)
 
-@extend_schema(summary='Category')
+
+@extend_schema(
+    tags=["Category"]
+)
 class CategoryViewSet(ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [AllowAny]
 
-@extend_schema(summary='Service')
+
+@extend_schema(tags=["Service"])
 class ServiceViewSet(ModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
@@ -113,7 +124,8 @@ class ServiceViewSet(ModelViewSet):
         worker_profile = self.request.user.worker_profile
         return serializer.save(worker=worker_profile)
 
-@extend_schema(summary='Conversation')
+
+@extend_schema(tags=["Conversation"])
 class ConversationViewSet(ModelViewSet):
     queryset = Conversation.objects.all()
 
@@ -126,7 +138,8 @@ class ConversationViewSet(ModelViewSet):
             Q(client=user) | Q(worker=user)
         )
 
-@extend_schema(summary='Message')
+
+@extend_schema(tags=["Message"])
 class MessageViewSet(ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
@@ -142,7 +155,8 @@ class MessageViewSet(ModelViewSet):
     def perform_create(self, serializer):
         return serializer.save(sender=self.request.user)
 
-@extend_schema(summary='Order')
+
+@extend_schema(tags=["Order"])
 class OrderViewSet(ModelViewSet):
     serializer_class = OrderSerializer
 
@@ -186,7 +200,8 @@ class OrderViewSet(ModelViewSet):
         send_order_status_email.delay(order.id, 'cancelled')
         return Response({'status': 'cancelled'})
 
-@extend_schema(summary='OrderImage')
+
+@extend_schema(tags=["OrderImage"])
 class OrderImageViewSet(ModelViewSet):
     queryset = OrderImage.objects.all()
     serializer_class = OrderImageSerializer
@@ -194,7 +209,8 @@ class OrderImageViewSet(ModelViewSet):
     def get_queryset(self):
         return OrderImage.objects.filter(order__client=self.request.user)
 
-@extend_schema(summary='Review')
+
+@extend_schema(tags=["Review"])
 class ReviewViewSet(GenericViewSet, mixins.CreateModelMixin, mixins.ListModelMixin):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
@@ -206,7 +222,8 @@ class ReviewViewSet(GenericViewSet, mixins.CreateModelMixin, mixins.ListModelMix
     def perform_create(self, serializer):
         return serializer.save(client=self.request.user)
 
-@extend_schema(summary='ReviewImage')
+
+@extend_schema(tags=["ReviewImage"])
 class ReviewImageViewSet(ModelViewSet):
     queryset = ReviewImage.objects.all()
     serializer_class = ReviewImageSerializer
@@ -215,7 +232,8 @@ class ReviewImageViewSet(ModelViewSet):
     def get_queryset(self):
         return ReviewImage.objects.filter(review__client=self.request.user)
 
-@extend_schema(summary='Favourite')
+
+@extend_schema(tags=["Favourite"])
 class FavouriteViewSet(viewsets.GenericViewSet,
                        mixins.CreateModelMixin,
                        mixins.DestroyModelMixin,
