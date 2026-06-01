@@ -44,6 +44,34 @@ class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelM
         return Response(serializer.data)
 
 
+class RegisterView(CreateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.save()
+
+        send_mail_task.delay(user.id)
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response(
+            {
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                },
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
 @extend_schema(
     tags=['WorkerProfile']
 )
@@ -54,8 +82,8 @@ class WorkerProfileViewSet(ModelViewSet):
 
     filter_backends = [OrderingFilter, SearchFilter]
     filterset_class = WorkerFilter
-    search_fields = ['category__name', ]
-    ordering_fields = ['rating', ]
+    search_fields = 'category__name',
+    ordering_fields = 'rating',
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'create', 'destroy']:
@@ -79,12 +107,6 @@ class PortfolioViewSet(ModelViewSet):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False):
-            return Portfolio.objects.none()
-
-        if not self.request.user.is_authenticated:
-            return Portfolio.objects.none()
-
         return Portfolio.objects.filter(worker__user=self.request.user)
 
     def perform_create(self, serializer):
@@ -112,11 +134,8 @@ class ServiceViewSet(ModelViewSet):
         return [IsAuthenticated(), IsWorker()]
 
     def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False):
-            return Service.objects.none()
-        if self.request.user.is_authenticated:
-            if self.action in ['create', 'update', 'partial_update', 'destroy']:
-                return Service.objects.filter(worker__user=self.request.user)
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return Service.objects.filter(worker__user=self.request.user)
 
         return Service.objects.select_related('worker', 'category').all()
 
@@ -159,13 +178,10 @@ class MessageViewSet(ModelViewSet):
 @extend_schema(tags=["Order"])
 class OrderViewSet(ModelViewSet):
     serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False):
-            return Order.objects.none()
         user = self.request.user
-        if not user.is_authenticated:
-            return Order.objects.none()
         if user.role == 'worker':
             return Order.objects.filter(service__worker__user=user)
         return Order.objects.filter(client=user)
@@ -247,31 +263,3 @@ class FavouriteViewSet(viewsets.GenericViewSet,
 
     def perform_create(self, serializer):
         serializer.save(client=self.request.user)
-
-
-class RegisterView(CreateAPIView):
-    serializer_class = UserSerializer
-    permission_classes = [AllowAny]
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-
-        serializer.is_valid(raise_exception=True)
-
-        user = serializer.save()
-
-        send_mail_task.delay(user.id)
-
-        refresh = RefreshToken.for_user(user)
-
-        return Response(
-            {
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                },
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-            },
-            status=status.HTTP_201_CREATED
-        )
