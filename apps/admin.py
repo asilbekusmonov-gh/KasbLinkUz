@@ -1,3 +1,2 @@
-from django.contrib import admin
 
-# Register your models here.
+# Admin panel is empty for now
