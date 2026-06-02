@@ -76,6 +76,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'fallback-secret-key-for-dev')
 
 DATABASES = {
     'default': dj_database_url.config(
+
         default=os.getenv('DATABASE_URL'),
         conn_max_age=600
     )
