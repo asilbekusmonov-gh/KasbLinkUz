@@ -177,6 +177,7 @@ class MessageViewSet(ModelViewSet):
 
 @extend_schema(tags=["Order"])
 class OrderViewSet(ModelViewSet):
+    queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
 
