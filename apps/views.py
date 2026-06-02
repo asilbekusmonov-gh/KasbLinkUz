@@ -23,7 +23,7 @@ from apps.serializers import (
     OrderSerializer, OrderImageSerializer, ReviewImageSerializer,
     FavouriteSerializer, UserSerializer, WorkerProfileSerializer, PortfolioSerializer, ReviewSerializer
 )
-from apps.tasks import send_mail_task, send_order_placed_email, send_order_status_email
+from apps.tasks import send_mail_task, send_order_placed_email, send_order_status_email, send_welcome_email
 
 
 @extend_schema(
@@ -55,7 +55,7 @@ class RegisterView(CreateAPIView):
 
         user = serializer.save()
 
-        send_mail_task.delay(user.id)
+        send_welcome_email.delay(user.id)
 
         refresh = RefreshToken.for_user(user)
 

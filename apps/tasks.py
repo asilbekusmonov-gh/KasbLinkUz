@@ -6,7 +6,7 @@ from django.conf import settings
 
 
 @shared_task
-def send_mail_task(user_id):
+def send_welcome_email(user_id):
     user = User.objects.get(pk=user_id)
     send_mail(
         subject='Welcome to KasbLink!',
@@ -23,7 +23,7 @@ def send_order_placed_email(order_id):
 
     worker_email = order.service.worker.user.email
     client_name = order.client.username
-    service_title = order.service.title
+    service_title = order.service.name
 
     send_mail(
         subject='Welcome to KasbLink!',
@@ -38,11 +38,11 @@ def send_order_status_email(order_id, new_status):
     order = Order.objects.select_related('client', 'service').get(pk=order_id)
 
     message = {
-        'accepted': f'Your order for "{order.service.title}" was accepted! '
+        'accepted': f'Your order for "{order.service.name}" was accepted! '
                     f'The worker has started working on it',
-        'completed': f'Your order for "{order.service.title}" is completed! '
+        'completed': f'Your order for "{order.service.name}" is completed! '
                      f'Please leave a review',
-        'cancelled': f'Your order for "{order.service.title}" was cancelled',
+        'cancelled': f'Your order for "{order.service.name}" was cancelled',
     }
 
     message = message.get(new_status, 'Your order status has changed')
