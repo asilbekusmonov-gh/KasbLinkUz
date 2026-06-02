@@ -72,7 +72,7 @@ AUTH_USER_MODEL = 'apps.User'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-secret-key-for-dev')
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'fallback-secret-key-for-dev')
 
 DATABASES = {
     'default': dj_database_url.config(
@@ -148,7 +148,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 # Celery
-CELERY_BROKER_URL = os.getenv("REDIS_URL")
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
