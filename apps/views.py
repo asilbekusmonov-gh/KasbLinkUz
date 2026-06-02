@@ -82,7 +82,7 @@ class WorkerProfileViewSet(ModelViewSet):
 
     filter_backends = [OrderingFilter, SearchFilter]
     filterset_class = WorkerFilter
-    search_fields = 'category__name',
+    search_fields = 'name',
     ordering_fields = 'rating',
 
     def get_permissions(self):
