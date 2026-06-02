@@ -1,2 +1,8 @@
+from django.contrib import admin
 
-# Admin panel is empty for now
+from apps.models import Category
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    fields = ('name', 'slug')

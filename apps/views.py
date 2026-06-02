@@ -87,7 +87,7 @@ class WorkerProfileViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'create', 'destroy']:
-            return [IsAuthenticated(), IsOwner()]
+            return [IsAuthenticated(), IsOwner(), IsWorker]
 
         return [AllowAny(), ]
 
