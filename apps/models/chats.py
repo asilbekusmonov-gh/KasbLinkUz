@@ -1,5 +1,7 @@
 from django.db.models import *
 
+from apps.models import CreatedAt
+
 
 class Conversation(Model):
     client = ForeignKey(
@@ -15,7 +17,7 @@ class Conversation(Model):
     )
 
 
-class Message(Model):
+class Message(CreatedAt):
     class MessageType(TextChoices):
         TEXT = 'text', 'TEXT'
         IMAGE = 'image', 'IMAGE'
@@ -69,5 +71,3 @@ class Message(Model):
     )
 
     is_read = BooleanField(default=False)
-
-    created_at = DateTimeField(auto_now_add=True)

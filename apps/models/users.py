@@ -1,7 +1,9 @@
 from django.contrib.auth.models import AbstractUser
 from django.db.models import CharField, TextChoices, Model, DecimalField, PositiveIntegerField, \
     BooleanField, OneToOneField, CASCADE, ImageField, ForeignKey, TextField, DateTimeField
-from rest_framework.fields import TimeField
+
+from apps.models import CreatedAt
+# from rest_framework.fields import TimeField
 
 from apps.models.managers import CustomUserManager
 
@@ -17,12 +19,24 @@ class User(AbstractUser):
     profile_image = ImageField(upload_to='users/%Y/%m/%d', null=True, blank=True)
     objects = CustomUserManager()
 
+    @property
+    def is_worker(self) -> bool:
+        return self.role == User.Role.WORKER
+
+    @property
+    def is_client(self) -> bool:
+        return self.role == User.Role.CUSTOMER
+
+    @property
+    def is_admin(self) -> bool:
+        return self.role == User.Role.ADMIN
+
 
 class WorkerProfile(Model):
     profile_image = ImageField(upload_to='users/%Y/%m/%d', null=True, blank=True)
     bio = CharField(max_length=255)
-    work_start_time = TimeField()
-    work_end_time = TimeField()
+    work_start_time = DateTimeField()
+    work_end_time = DateTimeField()
     rating = DecimalField(max_digits=2, decimal_places=1)
     completed_orders_count = PositiveIntegerField(default=0)
     is_available = BooleanField(default=True)
@@ -56,7 +70,7 @@ class District(Model):
         return f"{self.city} - {self.name}"
 
 
-class Portfolio(Model):
+class Portfolio(CreatedAt):
     worker = ForeignKey("apps.WorkerProfile", CASCADE, related_name='portfolio')
 
     title = CharField(max_length=150)
@@ -65,8 +79,6 @@ class Portfolio(Model):
     image = ImageField(upload_to='portfolio/%Y/%m/%d')
 
     category = ForeignKey("apps.Category", CASCADE, related_name='portfolio_category')
-
-    created_at = DateTimeField(auto_now_add=True)
 
 
 class PortfolioImage(Model):

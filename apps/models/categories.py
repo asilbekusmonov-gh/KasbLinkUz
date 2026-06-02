@@ -1,13 +1,15 @@
 from django.db.models import Model, CharField, SlugField, PositiveIntegerField, TextField, ForeignKey, CASCADE
 from rest_framework.fields import BooleanField
 
+from apps.models import CreatedAt
+
 
 class Category(Model):
     name = CharField(max_length=50)
     slug = SlugField(unique=True)
 
 
-class Service(Model):
+class Service(CreatedAt):
     name = CharField(max_length=50)
     min_price = PositiveIntegerField(null=True)
     max_price = PositiveIntegerField(null=True)

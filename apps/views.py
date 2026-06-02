@@ -3,7 +3,7 @@ from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework.generics import CreateAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -76,23 +76,18 @@ class RegisterView(CreateAPIView):
     tags=['WorkerProfile']
 )
 class WorkerProfileViewSet(ModelViewSet):
-    queryset = WorkerProfile.objects.all()
+    queryset = WorkerProfile.objects.select_related('user').all()
     serializer_class = WorkerProfileSerializer
+    permission_classes = [(IsAuthenticated & IsOwner & IsWorker) | AllowAny]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     filter_backends = [OrderingFilter, SearchFilter]
     filterset_class = WorkerFilter
-    search_fields = 'user__username', 'worker_services__category'
-    ordering_fields = 'rating',
-
-    def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'create', 'destroy']:
-            return [IsAuthenticated(), IsOwner(), IsWorker]
-
-        return [AllowAny(), ]
-
-    def get_queryset(self):
-        return WorkerProfile.objects.select_related('user').all()
+    search_fields = [
+        'user__username',
+        'worker_services__category'
+    ]
+    ordering_fields = ['rating']
 
     def perform_create(self, serializer):
         return serializer.save(user=self.request.user)
@@ -107,9 +102,12 @@ class PortfolioViewSet(ModelViewSet):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
-        return Portfolio.objects.filter(worker__user=self.request.user)
+        qs = super().get_queryset()
+        return qs.filter(worker__user=self.request.user)
 
     def perform_create(self, serializer):
+        if not hasattr(self.request.user, 'worker_profile'):
+            raise ValidationError('Worker profile not found.')
         worker_profile = self.request.user.worker_profile
         serializer.save(worker=worker_profile)
 
@@ -117,7 +115,7 @@ class PortfolioViewSet(ModelViewSet):
 @extend_schema(
     tags=["Category"]
 )
-class CategoryViewSet(ReadOnlyModelViewSet):
+class CategoryListApi(ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [AllowAny]
@@ -127,15 +125,12 @@ class CategoryViewSet(ReadOnlyModelViewSet):
 class ServiceViewSet(ModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [AllowAny()]
-        return [IsAuthenticated(), IsWorker()]
+    permission_classes = [(IsAuthenticated & IsWorker) | AllowAny]
 
     def get_queryset(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return Service.objects.filter(worker__user=self.request.user)
+        qs = super().get_queryset()
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return qs.filter(worker__user=self.request.user)
 
         return Service.objects.select_related('worker', 'category').all()
 
@@ -152,8 +147,9 @@ class ConversationViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        qs = super().get_queryset()
         user = self.request.user
-        return Conversation.objects.filter(
+        return qs.filter(
             Q(client=user) | Q(worker=user)
         )
 
@@ -165,8 +161,9 @@ class MessageViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        qs = super().get_queryset()
         user = self.request.user
-        return Message.objects.filter(
+        return qs.filter(
             Q(conversation__client=user) |
             Q(conversation__worker=user)
         )
@@ -177,15 +174,20 @@ class MessageViewSet(ModelViewSet):
 
 @extend_schema(tags=["Order"])
 class OrderViewSet(ModelViewSet):
-    queryset = Order.objects.all()
+    queryset = Order.objects.select_related(
+        'client',
+        'service',
+        'service__worker'
+    )
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        qs = super().get_queryset()
         user = self.request.user
-        if user.role == 'worker':
-            return Order.objects.filter(service__worker__user=user)
-        return Order.objects.filter(client=user)
+        if user.is_worker:
+            return qs.filter(service__worker__user=user)
+        return qs.filter(client=user)
 
     def perform_create(self, serializer):
         order = serializer.save(client=self.request.user)
@@ -194,7 +196,7 @@ class OrderViewSet(ModelViewSet):
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsWorker])
     def accepted(self, request, pk=None):
         order = self.get_object()
-        order.status = 'accepted'
+        order.status = Order.Status.ACCEPTED
         order.save()
         send_order_status_email.delay(order.id, 'accepted')
         return Response({'status': 'accepted'})
@@ -202,7 +204,11 @@ class OrderViewSet(ModelViewSet):
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsWorker])
     def completed(self, request, pk=None):
         order = self.get_object()
-        order.status = 'completed'
+        if order.status != Order.Status.ACCEPTED:
+            raise ValidationError(
+                'Only accepted orders can be completed.'
+            )
+        order.status = Order.Status.COMPLETED
         order.save()
         send_order_status_email.delay(order.id, 'completed')
         return Response({'status': 'completed'})
@@ -210,9 +216,9 @@ class OrderViewSet(ModelViewSet):
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsClient])
     def cancelled(self, request, pk=None):
         order = self.get_object()
-        if order.status == 'completed':
+        if order.status == Order.Status.CANCELLED:
             raise ValidationError('Order is already completed.')
-        order.status = 'cancelled'
+        order.status = Order.Status.CANCELLED
         order.save()
         send_order_status_email.delay(order.id, 'cancelled')
         return Response({'status': 'cancelled'})
@@ -224,7 +230,8 @@ class OrderImageViewSet(ModelViewSet):
     serializer_class = OrderImageSerializer
 
     def get_queryset(self):
-        return OrderImage.objects.filter(order__client=self.request.user)
+        qs = super().get_queryset()
+        return qs.filter(order__client=self.request.user)
 
 
 @extend_schema(tags=["Review"])
@@ -234,7 +241,8 @@ class ReviewViewSet(GenericViewSet, mixins.CreateModelMixin, mixins.ListModelMix
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Review.objects.filter(client=self.request.user)
+        qs = super().get_queryset()
+        return qs.filter(client=self.request.user)
 
     def perform_create(self, serializer):
         return serializer.save(client=self.request.user)
@@ -247,7 +255,8 @@ class ReviewImageViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return ReviewImage.objects.filter(review__client=self.request.user)
+        qs = super().get_queryset()
+        return qs.filter(review__client=self.request.user)
 
 
 @extend_schema(tags=["Favourite"])
@@ -260,7 +269,8 @@ class FavouriteViewSet(viewsets.GenericViewSet,
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Favourite.objects.filter(client=self.request.user)
+        qs = super().get_queryset()
+        return qs.filter(client=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(client=self.request.user)

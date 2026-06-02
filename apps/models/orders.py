@@ -2,9 +2,11 @@ from django.db.models import Model, CharField, TextField, DecimalField, DateFiel
     CASCADE, ForeignKey, ImageField
 from django.db.models.enums import TextChoices
 
+from apps.models import CreatedAt
 
-class Order(Model):
-    class OrderStatus(TextChoices):
+
+class Order(CreatedAt):
+    class Status(TextChoices):
         PENDING = "pending", "Pending"
         ACCEPTED = "accepted", "Accepted"
         COMPLETED = "completed", "Completed"
@@ -13,9 +15,7 @@ class Order(Model):
     title = CharField(max_length=100)
     description = TextField()
     address = CharField(max_length=100)
-    status = CharField(max_length=20, choices=OrderStatus.choices, default=OrderStatus.PENDING)
-    created_at = DateTimeField(auto_now_add=True)
-    updated_at = DateTimeField(auto_now=True)
+    status = CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
 
     client = ForeignKey("apps.User", on_delete=CASCADE, related_name='client_orders')
     worker = ForeignKey("apps.WorkerProfile", on_delete=CASCADE, related_name='worker_orders')
@@ -25,10 +25,9 @@ class Order(Model):
 class OrderImage(Model):
     order = ForeignKey("apps.Order", on_delete=CASCADE, related_name="order_images")
     image = ImageField(upload_to='users/%Y/%m/%d')
-    uploaded_at = DateTimeField(auto_now_add=True)
 
 
-class Review(Model):
+class Review(CreatedAt):
     order = OneToOneField("apps.Order", CASCADE, related_name="reviews")
 
     client = ForeignKey("apps.User", on_delete=CASCADE, related_name="reviews")
@@ -37,20 +36,16 @@ class Review(Model):
     rating = DecimalField(max_digits=5, decimal_places=2)
 
     comment = TextField()
-    created_at = DateTimeField(auto_now_add=True)
-    updated_at = DateTimeField(auto_now=True)
 
 
 class ReviewImage(Model):
     review = ForeignKey("apps.Review", on_delete=CASCADE, related_name="review_images")
     image = ImageField(upload_to='users/%Y/%m/%d')
-    uploaded_at = DateTimeField(auto_now_add=True)
 
 
 class Favourite(Model):
     client = ForeignKey("apps.User", on_delete=CASCADE, related_name="favourites")
     worker = ForeignKey("apps.WorkerProfile", on_delete=CASCADE, related_name="favourites")
-    created_at = DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = (("client", "worker"),)
