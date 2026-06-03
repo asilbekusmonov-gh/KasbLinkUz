@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, Count
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -89,8 +89,13 @@ class WorkerProfileViewSet(ModelViewSet):
     ]
     ordering_fields = ['rating']
 
-    def perform_create(self, serializer):
-        return serializer.save(user=self.request.user)
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return qs.filter(worker__user=self.request.user)
+
+        return qs.select_related('user').all()
 
 
 @extend_schema(
@@ -132,7 +137,7 @@ class ServiceViewSet(ModelViewSet):
         if self.action in ['update', 'partial_update', 'destroy']:
             return qs.filter(worker__user=self.request.user)
 
-        return Service.objects.select_related('worker', 'category').all()
+        return qs.select_related('worker', 'category').all()
 
     def perform_create(self, serializer):
         worker_profile = self.request.user.worker_profile
@@ -190,7 +195,7 @@ class OrderViewSet(ModelViewSet):
         return qs.filter(client=user)
 
     def perform_create(self, serializer):
-        order = serializer.save(client=self.request.user)
+        order = serializer.save()
         send_order_placed_email.delay(order.id)
 
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsWorker])
@@ -244,9 +249,6 @@ class ReviewViewSet(GenericViewSet, mixins.CreateModelMixin, mixins.ListModelMix
         qs = super().get_queryset()
         return qs.filter(client=self.request.user)
 
-    def perform_create(self, serializer):
-        return serializer.save(client=self.request.user)
-
 
 @extend_schema(tags=["ReviewImage"])
 class ReviewImageViewSet(ModelViewSet):
@@ -271,6 +273,3 @@ class FavouriteViewSet(viewsets.GenericViewSet,
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(client=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(client=self.request.user)

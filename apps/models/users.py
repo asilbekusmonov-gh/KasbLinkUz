@@ -37,7 +37,7 @@ class WorkerProfile(Model):
     bio = CharField(max_length=255)
     work_start_time = DateTimeField()
     work_end_time = DateTimeField()
-    rating = DecimalField(max_digits=2, decimal_places=1)
+    rating = DecimalField(max_digits=2, decimal_places=1, default=0.0)
     completed_orders_count = PositiveIntegerField(default=0)
     is_available = BooleanField(default=True)
     user = OneToOneField(

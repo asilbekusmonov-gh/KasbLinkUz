@@ -1,5 +1,5 @@
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import ImageField as DRFImageField, CharField
+from rest_framework.fields import ImageField as DRFImageField, CharField, HiddenField, CurrentUserDefault
 from rest_framework.serializers import ModelSerializer
 
 from apps.models import (
@@ -24,18 +24,16 @@ class UserSerializer(ModelSerializer):
             'profile_image': {'required': False},
         }
 
-    def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
-        return user
-
 
 class WorkerProfileSerializer(ModelSerializer):
+    user = HiddenField(default=CurrentUserDefault())
     profile_image = DRFImageField(required=False, use_url=True)
-    user = UserSerializer(read_only=True)
 
     class Meta:
         model = WorkerProfile
         fields = '__all__'
+        read_only_fields = ('completed_orders_count',
+                            'rating',)
 
     def validate(self, data):
         request = self.context.get('request')
@@ -76,10 +74,13 @@ class ServiceSerializer(ModelSerializer):
         model = Service
         fields = '__all__'
 
-    def validate_min_price(self, value):
-        if value <= 0:
-            raise ValidationError('Minimum price cannot be negative or zero')
-        return value
+    def validate(self, data):
+        min_price = data.get('min_price')
+        max_price = data.get('max_price')
+
+        if min_price > max_price or min_price <= 0:
+            raise ValidationError('The error occurred in price!')
+        return data
 
 
 class ConversationSerializer(ModelSerializer):
@@ -115,6 +116,7 @@ class OrderImageSerializer(ModelSerializer):
 
 
 class OrderSerializer(ModelSerializer):
+    client = HiddenField(default=CurrentUserDefault())
     order_images = OrderImageSerializer(many=True, read_only=True)
 
     class Meta:
@@ -142,6 +144,7 @@ class ReviewImageSerializer(ModelSerializer):
 
 
 class ReviewSerializer(ModelSerializer):
+    client = HiddenField(default=CurrentUserDefault())
     review_images = ReviewImageSerializer(many=True, read_only=True)
 
     class Meta:
@@ -166,6 +169,8 @@ class ReviewSerializer(ModelSerializer):
 
 
 class FavouriteSerializer(ModelSerializer):
+    client = HiddenField(default=CurrentUserDefault())
+
     class Meta:
         model = Favourite
         fields = '__all__'
