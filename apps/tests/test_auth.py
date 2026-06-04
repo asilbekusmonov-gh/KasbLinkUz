@@ -1,4 +1,3 @@
-# apps/test_auth.py
 import pytest
 from rest_framework.test import APIClient
 from apps.models import User
