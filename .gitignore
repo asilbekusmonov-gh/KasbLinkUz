@@ -14,3 +14,10 @@ media/
 
 # OS
 .DS_Store
+
+# IDE
+.idea/          ← add this
+*.iml           ← add this
+
+# Other
+text            ← add this
