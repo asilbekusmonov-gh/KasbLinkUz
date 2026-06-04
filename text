@@ -39,3 +39,41 @@
    ☐ Architecture diagram
    ☐ Consistent error messages
    ☐ Final Postman test of everything
+
+
+
+
+
+
+
+
+
+   ---------------
+ishbor
+
+  category da detailni olib tashlash
+  @property qoshish function bilan(is_worker)
+  get_queryset da qs foydalanish
+  hidden dan foydalanish client uchun
+  action da Order.status.Pending
+  base class dan foydalanish date time larga inherit qilish
+  ViewSet dan togri foydalanish
+  permissionda actionni orniga  | , and dan foydalanish(drf action permission)
+  update da id ni olib tashlash
+
+
+Reviewing weaker sides of KasbLInk
+
+worker cant rate his own rating(POST)
+completed_orders_count ni qolda kiritb bolmaydi(qachon order completed bolsagina completed_orders_countga +1)
+service da min_price kichik boishi kerak max_price dan
+update qilayotganda aftamatski ozinikini update qilsin, id kiritsh soralmasin
+
+
+
+
+
+
+
+
+

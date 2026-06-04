@@ -25,8 +25,8 @@ router.register(r'favourites', FavouriteViewSet, basename='favourite')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('Categories/', CategoryListApi.as_view()),
+    path('categories/', CategoryListApi.as_view()),
     path('auth/register/', RegisterView.as_view()),
-    path('auth/login', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

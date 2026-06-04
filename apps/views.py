@@ -32,7 +32,7 @@ from apps.tasks import send_order_placed_email, send_order_status_email, send_we
 class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated & IsOwner]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_object(self):
@@ -130,7 +130,11 @@ class CategoryListApi(ListAPIView):
 class ServiceViewSet(ModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
-    permission_classes = [(IsAuthenticated & IsWorker) | AllowAny]
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]  # anyone can browse
+        return [IsAuthenticated(), IsWorker()]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -221,7 +225,7 @@ class OrderViewSet(ModelViewSet):
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsClient])
     def cancelled(self, request, pk=None):
         order = self.get_object()
-        if order.status == Order.Status.CANCELLED:
+        if order.status == Order.Status.COMPLETED:
             raise ValidationError('Order is already completed.')
         order.status = Order.Status.CANCELLED
         order.save()

@@ -4,7 +4,7 @@ from django.urls import path, include
 from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from root import settings
+from django.conf import settings
 from root.settings import MEDIA_URL, MEDIA_ROOT
 
 urlpatterns = [
