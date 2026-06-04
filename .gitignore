@@ -16,8 +16,8 @@ media/
 .DS_Store
 
 # IDE
-.idea/          ← add this
-*.iml           ← add this
+.idea/
+*.iml
 
 # Other
-text            ← add this
+text
