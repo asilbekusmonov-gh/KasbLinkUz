@@ -1,4 +1,6 @@
 import pytest
+from rest_framework import status
+from rest_framework.reverse import reverse_lazy
 from rest_framework.test import APIClient
 from apps.models import User, WorkerProfile, Category, Service
 from django.utils import timezone
@@ -94,17 +96,17 @@ class TestOrders:
             'service': service.id,
             'worker': worker_profile.id,
         })
-        assert response.status_code == 201
+        assert response.status_code == status.HTTP_201_CREATED
         assert response.data['status'] == 'pending'
 
     def test_unauthenticated_cannot_place_order(self, api_client, service):
         response = api_client.post('/api/v1/orders/', {
             'service': service.id,
         })
-        assert response.status_code == 401
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_worker_can_accept_order(self, auth_client, auth_worker, service, worker_profile):
-        # Client places order
+
         order_response = auth_client.post('/api/v1/orders/', {
             'title': 'Fix my sink',
             'description': 'Need a plumber',
@@ -115,13 +117,13 @@ class TestOrders:
         assert order_response.status_code == 201
         order_id = order_response.data['id']
 
-        # Worker accepts it
-        response = auth_worker.patch(f'/api/v1/orders/{order_id}/accepted/')
+        # url = reverse_lazy(f'/api/v1/orders/{order_id}/accepted/')
+        url = reverse_lazy('order-accepted', (order_id,))
+        response = auth_worker.patch(url)
         assert response.status_code == 200
         assert response.data['status'] == 'accepted'
 
     def test_cannot_cancel_completed_order(self, auth_client, auth_worker, service, worker_profile):
-        # Place order
         order_response = auth_client.post('/api/v1/orders/', {
             'title': 'Fix my sink',
             'description': 'Need a plumber',
@@ -132,14 +134,11 @@ class TestOrders:
         assert order_response.status_code == 201
         order_id = order_response.data['id']
 
-        # Worker accepts it first
         accept_response = auth_worker.patch(f'/api/v1/orders/{order_id}/accepted/')
         assert accept_response.status_code == 200  # ← make sure this passes
 
-        # Then worker completes it
         complete_response = auth_worker.patch(f'/api/v1/orders/{order_id}/completed/')
         assert complete_response.status_code == 200  # ← make sure this passes
 
-        # Client tries to cancel — should fail
         response = auth_client.patch(f'/api/v1/orders/{order_id}/cancelled/')
         assert response.status_code == 400

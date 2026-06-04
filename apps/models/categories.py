@@ -1,5 +1,4 @@
-from django.db.models import Model, CharField, SlugField, PositiveIntegerField, TextField, ForeignKey, CASCADE
-from rest_framework.fields import BooleanField
+from django.db.models import Model, CharField, SlugField, PositiveIntegerField, TextField, ForeignKey, CASCADE, BooleanField
 
 from apps.models import CreatedAt
 

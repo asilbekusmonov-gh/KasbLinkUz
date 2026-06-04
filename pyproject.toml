@@ -8,6 +8,7 @@ dependencies = [
     "dj-database-url>=3.1.2",
     "django>=6.0.5",
     "django-celery-results>=2.6.0",
+    "django-cors-headers>=4.9.0",
     "django-filter>=25.2",
     "djangorestframework>=3.17.1",
     "djangorestframework-simplejwt>=5.5.1",
@@ -23,3 +24,8 @@ dependencies = [
     "python-dotenv>=1.2.2",
     "redis>=7.4.0",
 ]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "root.settings"
+# -- recommended but optional:
+python_files = ["test_*.py", "*_test.py"]
