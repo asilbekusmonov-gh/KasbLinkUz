@@ -11,6 +11,7 @@ Clients discover and hire verified workers. Built with Django REST Framework.
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)](https://postgresql.org)
 [![Redis](https://img.shields.io/badge/Redis-7.x-red?logo=redis)](https://redis.io)
 [![Celery](https://img.shields.io/badge/Celery-5.x-green?logo=celery)](https://docs.celeryq.dev)
+[![Tests](https://img.shields.io/badge/Tests-21%20passing-brightgreen)](https://github.com/asilbekusmonov-gh/KasbLinkUz)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
@@ -47,6 +48,7 @@ This repository is the **backend API only**. Designed to be consumed by any fron
 - Star ratings and reviews (only on completed orders)
 - Favourites / wishlist for services
 - City & district based worker discovery
+- Auto-calculated worker rating and completed orders count via signals
 
 ### Background Tasks (Celery + Redis)
 - Welcome email on registration
@@ -69,6 +71,7 @@ This repository is the **backend API only**. Designed to be consumed by any fron
 - Role-level permissions on every endpoint
 - Passwords hashed with Django's PBKDF2 algorithm
 - Sensitive fields stripped from all responses
+- `HiddenField` used for user injection — clients cannot fake ownership
 
 ### Validations
 - Cannot order your own service
@@ -78,6 +81,7 @@ This repository is the **backend API only**. Designed to be consumed by any fron
 - Cannot favourite the same service twice
 - Cannot create duplicate worker profile
 - Cannot send message to a conversation you don't belong to
+- Cannot cancel a completed order
 
 ---
 
@@ -93,6 +97,7 @@ This repository is the **backend API only**. Designed to be consumed by any fron
 | Auth | JWT via `djangorestframework-simplejwt` |
 | API Docs | `drf-spectacular` (Swagger + ReDoc) |
 | Filtering | `django-filter` |
+| Testing | pytest + pytest-django (21 tests) |
 | Deployment | Railway |
 
 ---
@@ -105,15 +110,20 @@ kasblink/
 │   ├── models/
 │   │   ├── __init__.py
 │   │   ├── users.py        # User, WorkerProfile, Portfolio
-│   │   ├── catalog.py      # Category, Service
-│   │   ├── orders.py       # Order, OrderImage
-│   │   ├── chats.py        # Conversation, Message
-│   │   ├── reviews.py      # Review, ReviewImage
-│   │   └── favourites.py   # Favourite
+│   │   ├── categories.py   # Category, Service
+│   │   ├── orders.py       # Order, OrderImage, Review, Favourite
+│   │   └── chats.py        # Conversation, Message
+│   ├── tests/
+│   │   ├── __init__.py
+│   │   ├── test_auth.py        # Register, login tests
+│   │   ├── test_permissions.py # Role-based access tests
+│   │   └── test_orders.py      # Full order lifecycle tests
 │   ├── serializers.py
 │   ├── views.py
 │   ├── urls.py
 │   ├── permissions.py
+│   ├── signals.py          # Auto-update worker rating & order count
+│   ├── filters.py
 │   └── tasks.py            # Celery background tasks
 ├── root/
 │   ├── settings.py
@@ -128,11 +138,33 @@ kasblink/
 
 **Role-based permissions** — Three custom DRF permission classes (`IsWorker`, `IsClient`, `IsOwner`) applied at the viewset level. Public endpoints use `AllowAny`, all mutation endpoints require authentication and role verification.
 
-**Filtered querysets** — Every viewset overrides `get_queryset()` to return only data belonging to the authenticated user. No user can access another user's orders, conversations, or portfolio items.
+**Filtered querysets** — Every viewset overrides `get_queryset()` using `super().get_queryset()` pattern to return only data belonging to the authenticated user. No user can access another user's orders, conversations, or portfolio items.
 
 **Mixin-based viewsets** — Instead of `ModelViewSet` everywhere, each viewset explicitly declares only the actions it needs, preventing unintended endpoints from being exposed.
 
 **Async email notifications** — All emails are sent via Celery background tasks. The HTTP response returns instantly without waiting for email delivery.
+
+**HiddenField for user injection** — User fields are automatically set from `request.user` via `HiddenField(default=CurrentUserDefault())`. Clients cannot fake ownership of resources.
+
+**Signals for auto-calculated fields** — Worker `rating` and `completed_orders_count` are automatically updated via Django signals when orders complete and reviews are created.
+
+---
+
+## Testing
+
+```bash
+pytest
+```
+
+```
+21 tests passing across 3 test files:
+
+tests/test_auth.py        — register, login, token validation
+tests/test_permissions.py — role-based access control (8 tests)
+tests/test_orders.py      — full order lifecycle (9 tests)
+```
+
+Tests use `reverse()` for URL resolution and `status.HTTP_*` constants for clean, maintainable assertions.
 
 ---
 
@@ -270,9 +302,9 @@ API docs at `http://localhost:8000/api/schema/swagger-ui/`
 |---|---|---|---|
 | GET | `/api/v1/orders/` | ✅ | My orders |
 | POST | `/api/v1/orders/` | ✅ Client | Place order |
-| PATCH | `/api/v1/orders/{id}/accept/` | ✅ Worker | Accept order |
-| PATCH | `/api/v1/orders/{id}/complete/` | ✅ Worker | Complete order |
-| PATCH | `/api/v1/orders/{id}/cancel/` | ✅ Client | Cancel order |
+| PATCH | `/api/v1/orders/{id}/accepted/` | ✅ Worker | Accept order |
+| PATCH | `/api/v1/orders/{id}/completed/` | ✅ Worker | Complete order |
+| PATCH | `/api/v1/orders/{id}/cancelled/` | ✅ Client | Cancel order |
 
 ### Conversations & Messages
 
@@ -332,8 +364,9 @@ See `.env.example` for full template.
 - [x] Celery + Redis — async background tasks
 - [x] Email notifications — order lifecycle + welcome email
 - [x] File uploads — portfolio images, service cover, profile image
+- [x] Django signals — auto-update worker rating and order count
 - [x] Deployed to Railway — live URL
-- [ ] Tests with pytest — target 80%+ coverage
+- [x] Tests with pytest — 21 tests passing
 - [ ] Docker + Docker Compose
 - [ ] GitHub Actions CI/CD
 - [ ] Real-time chat — Django Channels + WebSocket
