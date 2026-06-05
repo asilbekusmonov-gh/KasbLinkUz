@@ -182,7 +182,12 @@ class MessageViewSet(ModelViewSet):
 
 
 @extend_schema(tags=["Order"])
-class OrderViewSet(ModelViewSet):
+class OrderViewSet(
+    GenericViewSet,
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+):
     queryset = Order.objects.select_related(
         'client',
         'service',

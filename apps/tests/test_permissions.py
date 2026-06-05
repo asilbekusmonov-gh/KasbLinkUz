@@ -1,6 +1,8 @@
-# apps/test_permissions.py
 import pytest
+from django.urls import reverse
+from rest_framework import status
 from rest_framework.test import APIClient
+
 from apps.models import User
 
 
@@ -48,36 +50,44 @@ def auth_worker(worker_user):
 @pytest.mark.django_db
 class TestPermissions:
     def test_unauthenticated_cannot_place_order(self, api_client):
-        response = api_client.post('/api/v1/orders/', {})
-        assert response.status_code == 401
+        url = reverse('order-list')
+        response = api_client.post(url, {})
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_unauthenticated_can_browse_services(self, api_client):
-        response = api_client.get('/api/v1/services/')
-        assert response.status_code == 200
+        url = reverse('service-list')
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
 
     def test_unauthenticated_can_browse_categories(self, api_client):
-        response = api_client.get('/api/v1/categories/')
-        assert response.status_code == 200
+        url = reverse('categories')
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
 
     def test_client_cannot_create_service(self, auth_client):
-        response = auth_client.post('/api/v1/services/', {
+        url = reverse('service-list')
+        response = auth_client.post(url, {
             'title': 'Test service',
             'price': 100,
         })
-        assert response.status_code == 403
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     def test_unauthenticated_cannot_see_orders(self, api_client):
-        response = api_client.get('/api/v1/orders/')
-        assert response.status_code == 401
+        url = reverse('order-list')
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_unauthenticated_cannot_see_conversations(self, api_client):
-        response = api_client.get('/api/v1/conversations/')
-        assert response.status_code == 401
+        url = reverse('conversation-list')
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_authenticated_can_see_own_orders(self, auth_client):
-        response = auth_client.get('/api/v1/orders/')
-        assert response.status_code == 200
+        url = reverse('order-list')
+        response = auth_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
 
     def test_authenticated_can_see_own_favourites(self, auth_client):
-        response = auth_client.get('/api/v1/favourites/')
-        assert response.status_code == 200
+        url = reverse('favourite-list')
+        response = auth_client.get(url)
+        assert response.status_code == status.HTTP_200_OK

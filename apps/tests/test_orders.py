@@ -1,10 +1,13 @@
-import pytest
-from rest_framework import status
-from rest_framework.reverse import reverse_lazy
-from rest_framework.test import APIClient
-from apps.models import User, WorkerProfile, Category, Service
-from django.utils import timezone
 import datetime
+
+import pytest
+from django.urls import reverse
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APIClient
+
+from apps.models import User, WorkerProfile, Category, Service
+
 
 @pytest.fixture
 def api_client():
@@ -79,17 +82,19 @@ def auth_worker(worker_user):
 @pytest.mark.django_db
 class TestOrders:
     def test_client_can_place_order(self, auth_client, service, worker_profile):
-        response = auth_client.post('/api/v1/orders/', {
+        url = reverse('order-list')
+        response = auth_client.post(url, {
             'title': 'Fix my sink',
             'description': 'Need a plumber',
             'address': 'Tashkent, Chilonzor',
             'service': service.id,
             'worker': worker_profile.id,
         })
-        assert response.status_code == 201
+        assert response.status_code == status.HTTP_201_CREATED
 
     def test_order_starts_as_pending(self, auth_client, service, worker_profile):
-        response = auth_client.post('/api/v1/orders/', {
+        url = reverse('order-list')
+        response = auth_client.post(url, {
             'title': 'Fix my sink',
             'description': 'Need a plumber',
             'address': 'Tashkent, Chilonzor',
@@ -100,45 +105,108 @@ class TestOrders:
         assert response.data['status'] == 'pending'
 
     def test_unauthenticated_cannot_place_order(self, api_client, service):
-        response = api_client.post('/api/v1/orders/', {
+        url = reverse('order-list')
+        response = api_client.post(url, {
             'service': service.id,
         })
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_worker_can_accept_order(self, auth_client, auth_worker, service, worker_profile):
-
-        order_response = auth_client.post('/api/v1/orders/', {
+        # Client places order
+        order_response = auth_client.post(reverse('order-list'), {
             'title': 'Fix my sink',
             'description': 'Need a plumber',
             'address': 'Tashkent, Chilonzor',
             'service': service.id,
             'worker': worker_profile.id,
         })
-        assert order_response.status_code == 201
+        assert order_response.status_code == status.HTTP_201_CREATED
         order_id = order_response.data['id']
 
-        # url = reverse_lazy(f'/api/v1/orders/{order_id}/accepted/')
-        url = reverse_lazy('order-accepted', (order_id,))
+        # Worker accepts it
+        url = reverse('order-accepted', args=[order_id])
         response = auth_worker.patch(url)
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         assert response.data['status'] == 'accepted'
 
     def test_cannot_cancel_completed_order(self, auth_client, auth_worker, service, worker_profile):
-        order_response = auth_client.post('/api/v1/orders/', {
+        # Place order
+        order_response = auth_client.post(reverse('order-list'), {
             'title': 'Fix my sink',
             'description': 'Need a plumber',
             'address': 'Tashkent, Chilonzor',
             'service': service.id,
             'worker': worker_profile.id,
         })
-        assert order_response.status_code == 201
+        assert order_response.status_code == status.HTTP_201_CREATED
         order_id = order_response.data['id']
 
-        accept_response = auth_worker.patch(f'/api/v1/orders/{order_id}/accepted/')
-        assert accept_response.status_code == 200  # ← make sure this passes
+        # Worker accepts
+        accept_response = auth_worker.patch(reverse('order-accepted', args=[order_id]))
+        assert accept_response.status_code == status.HTTP_200_OK
 
-        complete_response = auth_worker.patch(f'/api/v1/orders/{order_id}/completed/')
-        assert complete_response.status_code == 200  # ← make sure this passes
+        # Worker completes
+        complete_response = auth_worker.patch(reverse('order-completed', args=[order_id]))
+        assert complete_response.status_code == status.HTTP_200_OK
 
-        response = auth_client.patch(f'/api/v1/orders/{order_id}/cancelled/')
-        assert response.status_code == 400
+        # Client tries to cancel — should fail
+        response = auth_client.patch(reverse('order-cancelled', args=[order_id]))
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_client_can_see_own_orders(self, auth_client, service, worker_profile):
+        # Create order first
+        auth_client.post(reverse('order-list'), {
+            'title': 'Fix my sink',
+            'description': 'Need a plumber',
+            'address': 'Tashkent, Chilonzor',
+            'service': service.id,
+            'worker': worker_profile.id,
+        })
+        # List orders
+        response = auth_client.get(reverse('order-list'))
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) > 0
+
+    def test_client_can_retrieve_own_order(self, auth_client, service, worker_profile):
+        order_response = auth_client.post(reverse('order-list'), {
+            'title': 'Fix my sink',
+            'description': 'Need a plumber',
+            'address': 'Tashkent, Chilonzor',
+            'service': service.id,
+            'worker': worker_profile.id,
+        })
+        order_id = order_response.data['id']
+
+        url = reverse('order-detail', args=[order_id])
+        response = auth_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['id'] == order_id
+
+    def test_order_cannot_be_deleted(self, auth_client, service, worker_profile):
+        order_response = auth_client.post(reverse('order-list'), {
+            'title': 'Fix my sink',
+            'description': 'Need a plumber',
+            'address': 'Tashkent, Chilonzor',
+            'service': service.id,
+            'worker': worker_profile.id,
+        })
+        order_id = order_response.data['id']
+
+        url = reverse('order-detail', args=[order_id])
+        response = auth_client.delete(url)
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_client_can_cancel_pending_order(self, auth_client, service, worker_profile):
+        order_response = auth_client.post(reverse('order-list'), {
+            'title': 'Fix my sink',
+            'description': 'Need a plumber',
+            'address': 'Tashkent, Chilonzor',
+            'service': service.id,
+            'worker': worker_profile.id,
+        })
+        order_id = order_response.data['id']
+
+        url = reverse('order-cancelled', args=[order_id])
+        response = auth_client.patch(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['status'] == 'cancelled'
