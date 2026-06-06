@@ -60,8 +60,8 @@ jobs:
   deploy:
     name: Deploy to Railway
     runs-on: ubuntu-latest
-    needs: test                # only runs if tests pass
-    if: github.ref == 'refs/heads/master'  # only on master branch
+    needs: test               
+    if: github.ref == 'refs/heads/master'
 
     steps:
       - name: Checkout code
