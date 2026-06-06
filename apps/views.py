@@ -1,4 +1,6 @@
-from django.db.models import Q, Count
+from django.db.models import Q
+from drf_spectacular.utils import extend_schema
+from rest_framework import status
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -7,10 +9,8 @@ from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import status
-from drf_spectacular.utils import extend_schema
 
 from apps.filters import WorkerFilter
 from apps.models import (

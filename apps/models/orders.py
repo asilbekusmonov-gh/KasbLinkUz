@@ -1,4 +1,4 @@
-from django.db.models import Model, CharField, TextField, DecimalField, DateField, DateTimeField, OneToOneField, \
+from django.db.models import Model, CharField, TextField, DecimalField, OneToOneField, \
     CASCADE, ForeignKey, ImageField
 from django.db.models.enums import TextChoices
 
