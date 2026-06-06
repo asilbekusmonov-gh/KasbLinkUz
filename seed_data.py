@@ -129,7 +129,7 @@ for w in workers_data:
 
 print("✓ Workers and Services seeded successfully.")
 
-# 3. Create a Customer account
+
 User.objects.get_or_create(
     username="mijoz1",
     defaults={
