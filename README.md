@@ -5,6 +5,7 @@
 **A production-grade REST API for a freelance service marketplace.**  
 Clients discover and hire verified workers. Built with Django REST Framework.
 
+[![CI](https://github.com/asilbekusmonov-gh/KasbLinkUz/actions/workflows/ci.yml/badge.svg)](https://github.com/asilbekusmonov-gh/KasbLinkUz/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.13-blue?logo=python)](https://python.org)
 [![Django](https://img.shields.io/badge/Django-5.x-green?logo=django)](https://djangoproject.com)
 [![DRF](https://img.shields.io/badge/DRF-3.x-red)](https://www.django-rest-framework.org/)
@@ -98,6 +99,7 @@ This repository is the **backend API only**. Designed to be consumed by any fron
 | API Docs | `drf-spectacular` (Swagger + ReDoc) |
 | Filtering | `django-filter` |
 | Testing | pytest + pytest-django (21 tests) |
+| CI/CD | GitHub Actions |
 | Deployment | Railway |
 
 ---
@@ -106,6 +108,9 @@ This repository is the **backend API only**. Designed to be consumed by any fron
 
 ```
 kasblink/
+├── .github/
+│   └── workflows/
+│       └── ci.yml          # GitHub Actions CI pipeline
 ├── apps/
 │   ├── models/
 │   │   ├── __init__.py
@@ -147,6 +152,19 @@ kasblink/
 **HiddenField for user injection** — User fields are automatically set from `request.user` via `HiddenField(default=CurrentUserDefault())`. Clients cannot fake ownership of resources.
 
 **Signals for auto-calculated fields** — Worker `rating` and `completed_orders_count` are automatically updated via Django signals when orders complete and reviews are created.
+
+---
+
+## CI/CD
+
+Every push to `master` automatically:
+
+```
+1. Spins up PostgreSQL + Redis on GitHub Actions
+2. Installs all dependencies
+3. Runs 21 pytest tests
+4. Shows ✅ or ❌ on the commit
+```
 
 ---
 
@@ -367,8 +385,8 @@ See `.env.example` for full template.
 - [x] Django signals — auto-update worker rating and order count
 - [x] Deployed to Railway — live URL
 - [x] Tests with pytest — 21 tests passing
+- [x] GitHub Actions CI — auto-run tests on every push
 - [ ] Docker + Docker Compose
-- [ ] GitHub Actions CI/CD
 - [ ] Real-time chat — Django Channels + WebSocket
 - [ ] Payment integration — Payme, Click
 
