@@ -10,3 +10,19 @@ exclude =
 ignore =
     E501,
     W503
+[flake8]
+max-line-length = 120
+exclude =
+    .git,
+    .venv,
+    venv,
+    migrations,
+    __pycache__,
+    settings.py
+per-file-ignores =
+    apps/models/__init__.py:F401
+    apps/apps.py:F401
+    apps/models/chats.py:F403,F405
+    apps/views.py:F401,W504
+    apps/tests/*:W292
+    apps/serializers.py:E126
