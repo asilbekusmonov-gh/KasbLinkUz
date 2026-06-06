@@ -60,7 +60,7 @@ jobs:
   deploy:
     name: Deploy to Railway
     runs-on: ubuntu-latest
-    needs: test               
+    needs: test
     if: github.ref == 'refs/heads/master'
 
     steps:
@@ -71,6 +71,6 @@ jobs:
         run: npm install -g @railway/cli
 
       - name: Deploy to Railway
-        run: railway up --detach
+        run: railway up --service 5384f330-f02f-4f07-a042-ea4674606d3e --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
