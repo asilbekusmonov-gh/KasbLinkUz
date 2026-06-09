@@ -93,6 +93,8 @@ def auth_worker(worker_user):
     return client
 
 
+
+
 @pytest.fixture
 def completed_order(order, auth_worker):
     accept_response = auth_worker.patch(reverse('order-accepted', args=[order.id]))
@@ -102,8 +104,8 @@ def completed_order(order, auth_worker):
     assert complete_response.status_code == 200, f"Complete failed: {complete_response.data}"
 
     order.refresh_from_db()
+    # FIX THE EXTRA 'd' HERE:
     assert order.status == 'completed', f"Order status is {order.status}"
-    return order
 
 
 @pytest.mark.django_db
