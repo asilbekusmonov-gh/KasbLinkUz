@@ -25,7 +25,7 @@ def client_user():
 @pytest.fixture
 def worker_user():
     return User.objects.create_user(
-        username='testworker',
+        username='testworkerr',
         email='worker@test.com',
         password='Test1234!',
         role='worker',
