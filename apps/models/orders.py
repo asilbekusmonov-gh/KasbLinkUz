@@ -31,8 +31,6 @@ class Review(CreatedAt):
     order = OneToOneField("apps.Order", CASCADE, related_name="reviews")
 
     client = ForeignKey("apps.User", on_delete=CASCADE, related_name="reviews")
-
-    worker = ForeignKey("apps.WorkerProfile", on_delete=CASCADE, related_name="reviews")
     rating = DecimalField(max_digits=5, decimal_places=2)
 
     comment = TextField()

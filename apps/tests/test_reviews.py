@@ -95,10 +95,17 @@ def auth_worker(worker_user):
 
 @pytest.fixture
 def completed_order(order, auth_worker):
-    auth_worker.patch(reverse('order-accepted', args=[order.id]))
-    auth_worker.patch(reverse('order-completed', args=[order.id]))
+    # Accept first
+    accept_response = auth_worker.patch(reverse('order-accepted', args=[order.id]))
+    assert accept_response.status_code == 200, f"Accept failed: {accept_response.data}"
 
+    # Then complete
+    complete_response = auth_worker.patch(reverse('order-completed', args=[order.id]))
+    assert complete_response.status_code == 200, f"Complete failed: {complete_response.data}"
+
+    # Refresh from database
     order.refresh_from_db()
+    assert order.status == 'completed', f"Order status is {order.status}"
     return order
 
 
@@ -111,6 +118,7 @@ class TestReview:
             'rating': 5,
             'comment': 'Great service!'
         })
+        print("RESPONSE DATA:", response.data)  # ← make sure this line exists
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_cannot_review_pending_order(self, auth_client, order):
