@@ -30,3 +30,21 @@ dependencies = [
 DJANGO_SETTINGS_MODULE = "root.settings"
 # -- recommended but optional:
 python_files = ["test_*.py", "*_test.py"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.16",
+]
+
+
+[tool.ruff]
+line-length = 120
+exclude = [
+    ".git",
+    ".venv",
+    "migrations",
+    "__pycache__",
+]
+
+[tool.ruff.lint]
+ignore = ["E501", "F401", "F403", "F405"]
