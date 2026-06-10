@@ -12,7 +12,7 @@ Clients discover and hire verified workers. Built with Django REST Framework.
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)](https://postgresql.org)
 [![Redis](https://img.shields.io/badge/Redis-7.x-red?logo=redis)](https://redis.io)
 [![Celery](https://img.shields.io/badge/Celery-5.x-green?logo=celery)](https://docs.celeryq.dev)
-[![Tests](https://img.shields.io/badge/Tests-21%20passing-brightgreen)](https://github.com/asilbekusmonov-gh/KasbLinkUz)
+[![Tests](https://img.shields.io/badge/Tests-23%20passing-brightgreen)](https://github.com/asilbekusmonov-gh/KasbLinkUz)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
@@ -92,13 +92,15 @@ This repository is the **backend API only**. Designed to be consumed by any fron
 |---|---|
 | Language | Python 3.13 |
 | Framework | Django 5, Django REST Framework |
+| Package Manager | uv |
 | Database | PostgreSQL 16 |
 | Cache / Broker | Redis 7 |
 | Background Tasks | Celery 5 + django-celery-results |
 | Auth | JWT via `djangorestframework-simplejwt` |
 | API Docs | `drf-spectacular` (Swagger + ReDoc) |
 | Filtering | `django-filter` |
-| Testing | pytest + pytest-django (21 tests) |
+| Linting | Ruff |
+| Testing | pytest + pytest-django (23 tests) |
 | CI/CD | GitHub Actions |
 | Deployment | Railway |
 
@@ -110,30 +112,32 @@ This repository is the **backend API only**. Designed to be consumed by any fron
 kasblink/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml          # GitHub Actions CI pipeline
+│       └── ci.yml              # GitHub Actions CI/CD pipeline
 ├── apps/
 │   ├── models/
 │   │   ├── __init__.py
-│   │   ├── users.py        # User, WorkerProfile, Portfolio
-│   │   ├── categories.py   # Category, Service
-│   │   ├── orders.py       # Order, OrderImage, Review, Favourite
-│   │   └── chats.py        # Conversation, Message
+│   │   ├── users.py            # User, WorkerProfile, Portfolio
+│   │   ├── categories.py       # Category, Service
+│   │   ├── orders.py           # Order, OrderImage, Review, Favourite
+│   │   └── chats.py            # Conversation, Message
 │   ├── tests/
 │   │   ├── __init__.py
 │   │   ├── test_auth.py        # Register, login tests
 │   │   ├── test_permissions.py # Role-based access tests
-│   │   └── test_orders.py      # Full order lifecycle tests
+│   │   ├── test_orders.py      # Full order lifecycle tests
+│   │   └── test_reviews.py     # Review validation tests
 │   ├── serializers.py
 │   ├── views.py
 │   ├── urls.py
 │   ├── permissions.py
-│   ├── signals.py          # Auto-update worker rating & order count
+│   ├── signals.py              # Auto-update worker rating & order count
 │   ├── filters.py
-│   └── tasks.py            # Celery background tasks
+│   └── tasks.py                # Celery background tasks
 ├── root/
 │   ├── settings.py
 │   ├── celery.py
 │   └── urls.py
+├── pyproject.toml
 └── manage.py
 ```
 
@@ -161,9 +165,10 @@ Every push to `master` automatically:
 
 ```
 1. Spins up PostgreSQL + Redis on GitHub Actions
-2. Installs all dependencies
-3. Runs 21 pytest tests
-4. Shows ✅ or ❌ on the commit
+2. Installs all dependencies via uv
+3. Runs ruff linting
+4. Runs 23 pytest tests
+5. Deploys to Railway only if all tests pass
 ```
 
 ---
@@ -175,11 +180,12 @@ pytest
 ```
 
 ```
-21 tests passing across 3 test files:
+23 tests passing across 4 test files:
 
-tests/test_auth.py        — register, login, token validation
+tests/test_auth.py        — register, login, token validation (4 tests)
 tests/test_permissions.py — role-based access control (8 tests)
 tests/test_orders.py      — full order lifecycle (9 tests)
+tests/test_reviews.py     — review validations (2 tests)
 ```
 
 Tests use `reverse()` for URL resolution and `status.HTTP_*` constants for clean, maintainable assertions.
@@ -203,6 +209,7 @@ Tests use `reverse()` for URL resolution and `status.HTTP_*` constants for clean
 - Python 3.13+
 - PostgreSQL 16+
 - Redis 7+
+- uv
 - Git
 
 ### 1. Clone the repository
@@ -212,21 +219,13 @@ git clone https://github.com/asilbekusmonov-gh/KasbLinkUz.git
 cd KasbLinkUz
 ```
 
-### 2. Create virtual environment
+### 2. Install dependencies
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate        # Linux / macOS
-.venv\Scripts\activate           # Windows
+uv sync
 ```
 
-### 3. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Configure environment
+### 3. Configure environment
 
 ```bash
 cp .env.example .env
@@ -240,33 +239,33 @@ DEBUG=True
 DATABASE_URL=postgresql://postgres:password@localhost:5432/kasblink
 ```
 
-### 5. Run database migrations
+### 4. Run database migrations
 
 ```bash
-python manage.py migrate
+uv run python manage.py migrate
 ```
 
-### 6. Create a superuser
+### 5. Create a superuser
 
 ```bash
-python manage.py createsuperuser
+uv run python manage.py createsuperuser
 ```
 
-### 7. Start Redis
+### 6. Start Redis
 
 ```bash
 sudo systemctl start redis
 redis-cli ping   # should return PONG
 ```
 
-### 8. Run the server
+### 7. Run the server
 
 ```bash
 # Terminal 1 — Django
-python manage.py runserver
+uv run python manage.py runserver
 
 # Terminal 2 — Celery worker
-celery -A root worker --loglevel=info
+uv run celery -A root worker --loglevel=info
 ```
 
 API running at `http://localhost:8000`  
@@ -384,9 +383,10 @@ See `.env.example` for full template.
 - [x] File uploads — portfolio images, service cover, profile image
 - [x] Django signals — auto-update worker rating and order count
 - [x] Deployed to Railway — live URL
-- [x] Tests with pytest — 21 tests passing
-- [x] GitHub Actions CI — auto-run tests on every push
-- [ ] Docker + Docker Compose
+- [x] Tests with pytest — 23 tests passing
+- [x] Ruff linting
+- [x] GitHub Actions CI/CD — auto-run tests + deploy on every push
+- [x] Docker + Docker Compose
 - [ ] Real-time chat — Django Channels + WebSocket
 - [ ] Payment integration — Payme, Click
 
