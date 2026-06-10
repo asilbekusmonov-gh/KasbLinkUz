@@ -57,8 +57,11 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Install ruff
+        run: pip install ruff
+
       - name: Run ruff
-        run: uv run ruff check apps/
+        run: ruff check apps/
 
       - name: Run pytest
         run: uv run pytest -v
