@@ -8,9 +8,9 @@ from django.conf import settings
 from root.settings import MEDIA_URL, MEDIA_ROOT
 
 urlpatterns = [
-                  path('', RedirectView.as_view(url='/api/schema/swagger-ui/')),
-                  path('admin/', admin.site.urls),
-                  path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-                  path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-                  path('api/v1/', include('apps.urls')),
-              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path("", RedirectView.as_view(url="/api/schema/swagger-ui/")),
+    path("admin/", admin.site.urls),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("api/v1/", include("apps.urls")),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

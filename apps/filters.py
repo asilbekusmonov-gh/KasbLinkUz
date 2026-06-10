@@ -4,8 +4,8 @@ from apps.models import WorkerProfile
 
 
 class WorkerFilter(FilterSet):
-    rating = NumberFilter(field_name='rating', lookup_expr='gte')
+    rating = NumberFilter(field_name="rating", lookup_expr="gte")
 
     class Meta:
         model = WorkerProfile
-        fields = ['worker_services__category', 'cities__districts']
+        fields = ["worker_services__category", "cities__districts"]

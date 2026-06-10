@@ -6,11 +6,12 @@ from apps.models import Order
 
 @receiver(post_save, sender=Order)
 def update_worker_stats(sender, instance, **kwargs):
-    if instance.status == 'completed':
+    if instance.status == "completed":
         worker_profile = instance.service.worker
         worker_profile.completed_orders_count += 1
 
         from apps.models import Review
+
         reviews = Review.objects.filter(order__service__worker=worker_profile)
 
         if reviews.exists():

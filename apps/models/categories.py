@@ -1,4 +1,13 @@
-from django.db.models import Model, CharField, SlugField, PositiveIntegerField, TextField, ForeignKey, CASCADE, BooleanField
+from django.db.models import (
+    Model,
+    CharField,
+    SlugField,
+    PositiveIntegerField,
+    TextField,
+    ForeignKey,
+    CASCADE,
+    BooleanField,
+)
 
 from apps.models import CreatedAt
 
@@ -14,5 +23,5 @@ class Service(CreatedAt):
     max_price = PositiveIntegerField(null=True)
     active = BooleanField(default=True)
     description = TextField(null=True)
-    worker = ForeignKey('apps.WorkerProfile', CASCADE, related_name='worker_services')
-    category = ForeignKey('apps.Category', CASCADE, related_name='services')
+    worker = ForeignKey("apps.WorkerProfile", CASCADE, related_name="worker_services")
+    category = ForeignKey("apps.Category", CASCADE, related_name="services")

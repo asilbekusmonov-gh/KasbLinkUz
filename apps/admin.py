@@ -5,4 +5,4 @@ from apps.models import Category
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    fields = ('name', 'slug')
+    fields = ("name", "slug")

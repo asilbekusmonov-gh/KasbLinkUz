@@ -2,7 +2,7 @@ import os
 import django
 from django.utils import timezone
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'root.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "root.settings")
 django.setup()
 
 from apps.models import User, WorkerProfile, Category, Service
@@ -44,7 +44,7 @@ workers_data = [
         "max_price": 250000,
         "cat_slug": "santexnika",
         "rating": 4.9,
-        "orders": 24
+        "orders": 24,
     },
     {
         "username": "anvar_elektrik",
@@ -57,7 +57,7 @@ workers_data = [
         "max_price": 400000,
         "cat_slug": "elektrik",
         "rating": 4.8,
-        "orders": 18
+        "orders": 18,
     },
     {
         "username": "farhod_molyar",
@@ -70,7 +70,7 @@ workers_data = [
         "max_price": 800000,
         "cat_slug": "remont",
         "rating": 4.7,
-        "orders": 31
+        "orders": 31,
     },
     {
         "username": "sherzod_mebel",
@@ -83,8 +83,8 @@ workers_data = [
         "max_price": 500000,
         "cat_slug": "duradgor",
         "rating": 4.9,
-        "orders": 15
-    }
+        "orders": 15,
+    },
 ]
 
 for w in workers_data:
@@ -96,10 +96,10 @@ for w in workers_data:
             "first_name": w["first_name"],
             "last_name": w["last_name"],
             "phone_number": w["phone_number"],
-            "role": User.Role.WORKER
-        }
+            "role": User.Role.WORKER,
+        },
     )
-    
+
     # Get or create worker profile
     profile, p_created = WorkerProfile.objects.get_or_create(
         user=user,
@@ -109,10 +109,10 @@ for w in workers_data:
             "work_end_time": timezone.now(),
             "rating": w["rating"],
             "completed_orders_count": w["orders"],
-            "is_available": True
-        }
+            "is_available": True,
+        },
     )
-    
+
     # Create service
     cat = Category.objects.get(slug=w["cat_slug"])
     Service.objects.get_or_create(
@@ -123,8 +123,8 @@ for w in workers_data:
             "min_price": w["min_price"],
             "max_price": w["max_price"],
             "active": True,
-            "description": w["bio"]
-        }
+            "description": w["bio"],
+        },
     )
 
 print("✓ Workers and Services seeded successfully.")
@@ -138,8 +138,8 @@ User.objects.get_or_create(
         "first_name": "Asrorbek",
         "last_name": "Usmonov",
         "phone_number": "900000001",
-        "role": User.Role.CUSTOMER
-    }
+        "role": User.Role.CUSTOMER,
+    },
 )
 print("✓ Customer account seeded: username='mijoz1', password='password123'")
 print("Database Seeding Completed!")

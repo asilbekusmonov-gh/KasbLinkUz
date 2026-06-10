@@ -1,5 +1,4 @@
-from django.db.models import Model, CharField, TextField, DecimalField, OneToOneField, \
-    CASCADE, ForeignKey, ImageField
+from django.db.models import Model, CharField, TextField, DecimalField, OneToOneField, CASCADE, ForeignKey, ImageField
 from django.db.models.enums import TextChoices
 
 from apps.models import CreatedAt
@@ -17,14 +16,14 @@ class Order(CreatedAt):
     address = CharField(max_length=100)
     status = CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
 
-    client = ForeignKey("apps.User", on_delete=CASCADE, related_name='client_orders')
-    worker = ForeignKey("apps.WorkerProfile", on_delete=CASCADE, related_name='worker_orders')
-    service = ForeignKey("apps.Service", on_delete=CASCADE, related_name='orders')
+    client = ForeignKey("apps.User", on_delete=CASCADE, related_name="client_orders")
+    worker = ForeignKey("apps.WorkerProfile", on_delete=CASCADE, related_name="worker_orders")
+    service = ForeignKey("apps.Service", on_delete=CASCADE, related_name="orders")
 
 
 class OrderImage(Model):
     order = ForeignKey("apps.Order", on_delete=CASCADE, related_name="order_images")
-    image = ImageField(upload_to='users/%Y/%m/%d')
+    image = ImageField(upload_to="users/%Y/%m/%d")
 
 
 class Review(CreatedAt):
@@ -38,7 +37,7 @@ class Review(CreatedAt):
 
 class ReviewImage(Model):
     review = ForeignKey("apps.Review", on_delete=CASCADE, related_name="review_images")
-    image = ImageField(upload_to='users/%Y/%m/%d')
+    image = ImageField(upload_to="users/%Y/%m/%d")
 
 
 class Favourite(Model):

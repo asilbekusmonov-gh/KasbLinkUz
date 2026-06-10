@@ -3,8 +3,18 @@ from rest_framework.fields import ImageField as DRFImageField, CharField, Hidden
 from rest_framework.serializers import ModelSerializer
 
 from apps.models import (
-    Category, Service, Conversation, Message, Order, OrderImage,
-    Review, ReviewImage, Favourite, User, WorkerProfile, Portfolio
+    Category,
+    Service,
+    Conversation,
+    Message,
+    Order,
+    OrderImage,
+    Review,
+    ReviewImage,
+    Favourite,
+    User,
+    WorkerProfile,
+    Portfolio,
 )
 from apps.models.users import City, District
 
@@ -14,14 +24,23 @@ class UserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'first_name',
-                  'last_name', 'role', 'phone_number', 'profile_image']
+        fields = [
+            "id",
+            "username",
+            "email",
+            "password",
+            "first_name",
+            "last_name",
+            "role",
+            "phone_number",
+            "profile_image",
+        ]
         extra_kwargs = {
-            'password': {'write_only': True},
-            'phone_number': {'required': False},
-            'first_name': {'required': False},
-            'last_name': {'required': False},
-            'profile_image': {'required': False},
+            "password": {"write_only": True},
+            "phone_number": {"required": False},
+            "first_name": {"required": False},
+            "last_name": {"required": False},
+            "profile_image": {"required": False},
         }
 
     def create(self, validated_data):
@@ -34,16 +53,18 @@ class WorkerProfileSerializer(ModelSerializer):
 
     class Meta:
         model = WorkerProfile
-        fields = '__all__'
-        read_only_fields = ('completed_orders_count',
-                            'rating',)
+        fields = "__all__"
+        read_only_fields = (
+            "completed_orders_count",
+            "rating",
+        )
 
     def validate(self, data):
-        request = self.context.get('request')
+        request = self.context.get("request")
 
-        if request and request.method == 'POST':
+        if request and request.method == "POST":
             if WorkerProfile.objects.filter(user=request.user).exists():
-                raise ValidationError('User can only have one worker profile')
+                raise ValidationError("User can only have one worker profile")
 
         return data
 
@@ -51,63 +72,60 @@ class WorkerProfileSerializer(ModelSerializer):
 class CityModelSerializer(ModelSerializer):
     class Meta:
         model = City
-        fields = '__all__'
+        fields = "__all__"
 
 
 class DistrictModelSerializer(ModelSerializer):
     class Meta:
         model = District
-        fields = '__all__'
+        fields = "__all__"
 
 
 class PortfolioSerializer(ModelSerializer):
     class Meta:
         model = Portfolio
-        fields = '__all__'
+        fields = "__all__"
 
 
 class CategorySerializer(ModelSerializer):
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = "__all__"
 
 
 class ServiceSerializer(ModelSerializer):
     class Meta:
         model = Service
-        fields = '__all__'
+        fields = "__all__"
 
     def validate(self, data):
-        min_price = data.get('min_price')
-        max_price = data.get('max_price')
+        min_price = data.get("min_price")
+        max_price = data.get("max_price")
 
         if min_price > max_price or min_price <= 0:
-            raise ValidationError('The error occurred in price!')
+            raise ValidationError("The error occurred in price!")
         return data
 
 
 class ConversationSerializer(ModelSerializer):
     class Meta:
         model = Conversation
-        fields = '__all__'
+        fields = "__all__"
 
 
 class MessageSerializer(ModelSerializer):
     class Meta:
         model = Message
-        fields = '__all__'
+        fields = "__all__"
 
     def validate(self, data):
-        request = self.context.get('request')
-        conversation = data.get('conversation')
+        request = self.context.get("request")
+        conversation = data.get("conversation")
         if conversation and request:
-
-            is_participant = (
-                    conversation.client == request.user or conversation.worker == request.user
-            )
+            is_participant = conversation.client == request.user or conversation.worker == request.user
 
             if not is_participant:
-                raise ValidationError('You are not participant of this conversation')
+                raise ValidationError("You are not participant of this conversation")
 
         return data
 
@@ -115,7 +133,7 @@ class MessageSerializer(ModelSerializer):
 class OrderImageSerializer(ModelSerializer):
     class Meta:
         model = OrderImage
-        fields = '__all__'
+        fields = "__all__"
 
 
 class OrderSerializer(ModelSerializer):
@@ -124,18 +142,18 @@ class OrderSerializer(ModelSerializer):
 
     class Meta:
         model = Order
-        fields = '__all__'
+        fields = "__all__"
 
     def validate(self, data):
-        service = data.get('service')
-        request = self.context.get('request')
+        service = data.get("service")
+        request = self.context.get("request")
 
         if request and service:
             if not service.active:
-                raise ValidationError('You can not  place order on inactive service')
+                raise ValidationError("You can not  place order on inactive service")
 
             if Order.objects.filter(client=request.user, service=service).exists():
-                raise ValidationError('Client can not order  Their own service')
+                raise ValidationError("Client can not order  Their own service")
 
         return data
 
@@ -143,7 +161,7 @@ class OrderSerializer(ModelSerializer):
 class ReviewImageSerializer(ModelSerializer):
     class Meta:
         model = ReviewImage
-        fields = '__all__'
+        fields = "__all__"
 
 
 class ReviewSerializer(ModelSerializer):
@@ -152,21 +170,21 @@ class ReviewSerializer(ModelSerializer):
 
     class Meta:
         model = Review
-        fields = '__all__'
+        fields = "__all__"
 
     def validate(self, data):
-        order = data.get('order')
-        request = self.context.get('request')
+        order = data.get("order")
+        request = self.context.get("request")
 
         if order and request:
-            if order.status != 'completed':
-                raise ValidationError('Order is not completed yet')
+            if order.status != "completed":
+                raise ValidationError("Order is not completed yet")
 
         if Review.objects.filter(client=request.user, order=order).exists():
-            raise ValidationError('You can not review twice')
+            raise ValidationError("You can not review twice")
 
         if order.client != request.user:
-            raise ValidationError('You can review your own review')
+            raise ValidationError("You can review your own review")
 
         return data
 
@@ -176,4 +194,4 @@ class FavouriteSerializer(ModelSerializer):
 
     class Meta:
         model = Favourite
-        fields = '__all__'
+        fields = "__all__"
