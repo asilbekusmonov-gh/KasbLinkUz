@@ -24,12 +24,14 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "channels",
     "apps",
     "rest_framework",
     "drf_spectacular",
@@ -154,3 +156,16 @@ CELERY_TIMEZONE = "Asia/Tashkent"
 # Email
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "KasbLink <noreply@kasblink.com>"
+
+
+# WebSocket / Django Channels
+ASGI_APPLICATION = "root.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("localhost", 6379)],
+        },
+    },
+}
