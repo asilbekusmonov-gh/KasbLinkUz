@@ -19,7 +19,12 @@ def send_welcome_email(user_id):
 
 @shared_task
 def send_order_placed_email(order_id):
-    order = Order.objects.select_related("client", "service__worker__user").get(pk=order_id)
+    # order = Order.objects.select_related("client", "service__worker__user").get(pk=1)
+    order = (
+        Order.objects.select_related("service", "client", "service__worker", "service__worker__user")
+        .only("service__name", "client__username", "service__worker__user__email")
+        .filter(pk=order_id)
+    ).first()
 
     worker_email = order.service.worker.user.email
     client_name = order.client.username

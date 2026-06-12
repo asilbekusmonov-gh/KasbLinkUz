@@ -1,10 +1,10 @@
 from django.db.models import Model, CharField, TextField, DecimalField, OneToOneField, CASCADE, ForeignKey, ImageField
 from django.db.models.enums import TextChoices
 
-from apps.models import CreatedAt
+from apps.models import TimeStampedModel
 
 
-class Order(CreatedAt):
+class Order(TimeStampedModel):
     class Status(TextChoices):
         PENDING = "pending", "Pending"
         ACCEPTED = "accepted", "Accepted"
@@ -26,7 +26,7 @@ class OrderImage(Model):
     image = ImageField(upload_to="users/%Y/%m/%d")
 
 
-class Review(CreatedAt):
+class Review(TimeStampedModel):
     order = OneToOneField("apps.Order", CASCADE, related_name="reviews")
 
     client = ForeignKey("apps.User", on_delete=CASCADE, related_name="reviews")

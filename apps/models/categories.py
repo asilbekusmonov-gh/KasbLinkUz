@@ -9,7 +9,7 @@ from django.db.models import (
     BooleanField,
 )
 
-from apps.models import CreatedAt
+from apps.models import TimeStampedModel
 
 
 class Category(Model):
@@ -17,7 +17,7 @@ class Category(Model):
     slug = SlugField(unique=True)
 
 
-class Service(CreatedAt):
+class Service(TimeStampedModel):
     name = CharField(max_length=50)
     min_price = PositiveIntegerField(null=True)
     max_price = PositiveIntegerField(null=True)

@@ -14,8 +14,7 @@ from django.db.models import (
     DateTimeField,
 )
 
-from apps.models import CreatedAt
-# from rest_framework.fields import TimeField
+from apps.models import TimeStampedModel
 
 from apps.models.managers import CustomUserManager
 
@@ -74,7 +73,7 @@ class District(Model):
         return f"{self.city} - {self.name}"
 
 
-class Portfolio(CreatedAt):
+class Portfolio(TimeStampedModel):
     worker = ForeignKey("apps.WorkerProfile", CASCADE, related_name="portfolio")
 
     title = CharField(max_length=150)

@@ -1,6 +1,6 @@
 from django.db.models import *
 
-from apps.models import CreatedAt
+from apps.models import TimeStampedModel
 
 
 class Conversation(Model):
@@ -9,7 +9,7 @@ class Conversation(Model):
     worker = ForeignKey("apps.User", CASCADE, related_name="worker_conversations")
 
 
-class Message(CreatedAt):
+class Message(TimeStampedModel):
     class MessageType(TextChoices):
         TEXT = "text", "TEXT"
         IMAGE = "image", "IMAGE"

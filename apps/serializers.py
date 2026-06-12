@@ -87,13 +87,15 @@ class PortfolioSerializer(ModelSerializer):
         fields = "__all__"
 
 
-class CategorySerializer(ModelSerializer):
+class CategoryModelSerializer(ModelSerializer):
     class Meta:
         model = Category
         fields = "__all__"
 
 
 class ServiceSerializer(ModelSerializer):
+    worker = HiddenField(default=CurrentUserDefault())
+
     class Meta:
         model = Service
         fields = "__all__"
@@ -114,6 +116,8 @@ class ConversationSerializer(ModelSerializer):
 
 
 class MessageSerializer(ModelSerializer):
+    sender = HiddenField(default=CurrentUserDefault())
+
     class Meta:
         model = Message
         fields = "__all__"

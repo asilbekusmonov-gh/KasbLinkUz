@@ -29,7 +29,7 @@ from apps.models import (
 )
 from apps.permissions import IsClient, IsOwner, IsWorker
 from apps.serializers import (
-    CategorySerializer,
+    CategoryModelSerializer,
     ServiceSerializer,
     ConversationSerializer,
     MessageSerializer,
@@ -129,8 +129,8 @@ class PortfolioViewSet(ModelViewSet):
 
 @extend_schema(tags=["Category"])
 class CategoryListApi(ListAPIView):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
+    queryset = Category.objects.defer("slug")
+    serializer_class = CategoryModelSerializer
     permission_classes = [AllowAny]
 
 
@@ -179,9 +179,6 @@ class MessageViewSet(ModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         return qs.filter(Q(conversation__client=user) | Q(conversation__worker=user))
-
-    def perform_create(self, serializer):
-        return serializer.save(sender=self.request.user)
 
 
 @extend_schema(tags=["Order"])
