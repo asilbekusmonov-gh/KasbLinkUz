@@ -17,8 +17,8 @@ class Notification(TimeStampedModel):
     )
     notification_type = CharField(max_length=20, choices=Type.choices)
     title = CharField(max_length=150)
-    description = TextField()  # Now using models.TextField
-    is_read = models.BooleanField(default=False)  # Now using models.BooleanField
+    description = TextField()
+    is_read = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-created_at"]
