@@ -1,16 +1,14 @@
 from rest_framework.permissions import BasePermission
 
-from apps.models import users
-
 
 class IsWorker(BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == users.role.is_user
+        return request.user.is_authenticated and request.user.role == "user"
 
 
 class IsClient(BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == users.role.is_worker
+        return request.user.is_authenticated and request.user.role == "customer"
 
 
 class IsOwner(BasePermission):
