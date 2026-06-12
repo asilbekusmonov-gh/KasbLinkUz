@@ -12,6 +12,7 @@ from django.db.models import (
     ForeignKey,
     TextField,
     DateTimeField,
+    ManyToManyField,
 )
 
 from apps.models import TimeStampedModel
@@ -54,11 +55,13 @@ class WorkerProfile(Model):
     user = OneToOneField(
         "apps.User", CASCADE, related_name="worker_profile", limit_choices_to={"role": User.Role.WORKER}
     )
+    service_districts = ManyToManyField("apps.District", related_name="workers", blank=True)
 
 
 class City(Model):
+    """Geographic region (viloyat)."""
+
     name = CharField(max_length=100)
-    worker = ForeignKey("apps.WorkerProfile", CASCADE, related_name="cities")
 
     def __str__(self):
         return self.name

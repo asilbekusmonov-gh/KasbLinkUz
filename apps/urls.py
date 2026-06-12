@@ -7,6 +7,8 @@ from apps.views import (
     WorkerProfileViewSet,
     PortfolioViewSet,
     CategoryListApi,
+    CityListApi,
+    DistrictListApi,
     ServiceViewSet,
     ConversationViewSet,
     MessageViewSet,
@@ -35,6 +37,8 @@ router.register(r"favourites", FavouriteViewSet, basename="favourite")
 urlpatterns = [
     path("", include(router.urls)),
     path("categories/", CategoryListApi.as_view(), name="categories"),
+    path("cities/", CityListApi.as_view(), name="cities"),
+    path("districts/", DistrictListApi.as_view(), name="districts"),
     path("auth/register/", RegisterView.as_view(), name="register"),
     path("auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),

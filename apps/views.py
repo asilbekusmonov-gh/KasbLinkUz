@@ -27,9 +27,12 @@ from apps.models import (
     Review,
     User,
 )
+from apps.models.users import City, District
 from apps.permissions import IsClient, IsOwner, IsWorker
 from apps.serializers import (
     CategoryModelSerializer,
+    CityModelSerializer,
+    DistrictModelSerializer,
     ServiceSerializer,
     ConversationSerializer,
     MessageSerializer,
@@ -49,15 +52,21 @@ from apps.tasks import send_order_placed_email, send_order_status_email, send_we
 class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated & IsOwner]
+    permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_object(self):
         return self.request.user
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["get", "patch", "put"])
     def me(self, request):
-        serializer = self.get_serializer(request.user)
+        if request.method == "GET":
+            serializer = self.get_serializer(request.user)
+            return Response(serializer.data)
+
+        serializer = self.get_serializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data)
 
 
@@ -105,7 +114,7 @@ class WorkerProfileViewSet(ModelViewSet):
         qs = super().get_queryset()
 
         if self.action in ["update", "partial_update", "destroy"]:
-            return qs.filter(worker__user=self.request.user)
+            return qs.filter(user=self.request.user)
 
         return qs.select_related("user").all()
 
@@ -132,6 +141,26 @@ class CategoryListApi(ListAPIView):
     queryset = Category.objects.defer("slug")
     serializer_class = CategoryModelSerializer
     permission_classes = [AllowAny]
+
+
+@extend_schema(tags=["Location"])
+class CityListApi(ListAPIView):
+    queryset = City.objects.order_by("name")
+    serializer_class = CityModelSerializer
+    permission_classes = [AllowAny]
+
+
+@extend_schema(tags=["Location"])
+class DistrictListApi(ListAPIView):
+    serializer_class = DistrictModelSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        qs = District.objects.select_related("city").order_by("name")
+        city_id = self.request.query_params.get("city")
+        if city_id:
+            qs = qs.filter(city_id=city_id)
+        return qs
 
 
 @extend_schema(tags=["Service"])
@@ -178,7 +207,11 @@ class MessageViewSet(ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         user = self.request.user
-        return qs.filter(Q(conversation__client=user) | Q(conversation__worker=user))
+        qs = qs.filter(Q(conversation__client=user) | Q(conversation__worker=user))
+        conversation_id = self.request.query_params.get("conversation")
+        if conversation_id:
+            qs = qs.filter(conversation_id=conversation_id)
+        return qs
 
 
 @extend_schema(tags=["Order"])

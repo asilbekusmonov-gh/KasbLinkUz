@@ -49,6 +49,7 @@ class UserSerializer(ModelSerializer):
 
 class WorkerProfileSerializer(ModelSerializer):
     user = HiddenField(default=CurrentUserDefault())
+    user_id = CharField(source="user.id", read_only=True)
     profile_image = DRFImageField(required=False, use_url=True)
 
     class Meta:
@@ -93,12 +94,41 @@ class CategoryModelSerializer(ModelSerializer):
         fields = "__all__"
 
 
+class WorkerProfileDetailSerializer(ModelSerializer):
+    user_detail = UserSerializer(source="user", read_only=True)
+
+    class Meta:
+        model = WorkerProfile
+        fields = [
+            "id",
+            "profile_image",
+            "bio",
+            "work_start_time",
+            "work_end_time",
+            "rating",
+            "completed_orders_count",
+            "is_available",
+            "user_detail",
+        ]
+
+
 class ServiceSerializer(ModelSerializer):
     worker = HiddenField(default=CurrentUserDefault())
+    worker_detail = WorkerProfileDetailSerializer(source="worker", read_only=True)
 
     class Meta:
         model = Service
-        fields = "__all__"
+        fields = [
+            "id",
+            "name",
+            "min_price",
+            "max_price",
+            "active",
+            "description",
+            "worker",
+            "category",
+            "worker_detail",
+        ]
 
     def validate(self, data):
         min_price = data.get("min_price")
@@ -110,9 +140,18 @@ class ServiceSerializer(ModelSerializer):
 
 
 class ConversationSerializer(ModelSerializer):
+    client_detail = UserSerializer(source="client", read_only=True)
+    worker_detail = UserSerializer(source="worker", read_only=True)
+
     class Meta:
         model = Conversation
-        fields = "__all__"
+        fields = [
+            "id",
+            "client",
+            "worker",
+            "client_detail",
+            "worker_detail",
+        ]
 
 
 class MessageSerializer(ModelSerializer):
