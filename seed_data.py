@@ -300,6 +300,79 @@ for ci, wname, msgs in convos_data:
             print(f"    [{sender.first_name}]: {text[:60]}...")
 
 
+# --- Portfolios ---
+print("\n--- Creating Portfolios ---")
+import urllib.request
+from django.core.files.temp import NamedTemporaryFile
+from django.core.files import File
+from apps.models import Portfolio
+
+portfolios_data = [
+    {
+        "worker_username": "farid_master",
+        "title": "Modern Bathroom Remodel",
+        "description": "Complete overhaul of master bathroom piping and faucet fixtures. Installed copper plumbing and high-end wall-mounted toilets.",
+        "category_name": "Plumbing",
+        "img_url": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&auto=format&fit=crop"
+    },
+    {
+        "worker_username": "aziz_electric",
+        "title": "Smart Home Control Panel Setup",
+        "description": "Installation of a modern smart lighting circuit breaker panel. Custom programmed dimmers, sensors, and remote app integration.",
+        "category_name": "Electrical",
+        "img_url": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&auto=format&fit=crop"
+    },
+    {
+        "worker_username": "malika_clean",
+        "title": "Post-Renovation House Clean",
+        "description": "Intense deep cleaning of a 4-bedroom villa after construction. All paint residues, dust, and construction debris completely removed.",
+        "category_name": "Cleaning",
+        "img_url": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&auto=format&fit=crop"
+    },
+    {
+        "worker_username": "rustam_painter",
+        "title": "Feature Accent Wall Painting",
+        "description": "High-end geometric feature wall painting in a modern minimalist apartment. Used premium matte textured eco-paints.",
+        "category_name": "Painting",
+        "img_url": "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&auto=format&fit=crop"
+    },
+    {
+        "worker_username": "bobur_wood",
+        "title": "Handcrafted Walnut Bookshelves",
+        "description": "Custom floor-to-ceiling bookshelves made from solid dark walnut wood, complete with integrated LED backlight panels.",
+        "category_name": "Carpentry",
+        "img_url": "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=600&auto=format&fit=crop"
+    }
+]
+
+for p_data in portfolios_data:
+    wp = worker_profiles.get(p_data["worker_username"])
+    if not wp:
+        continue
+    
+    p, created = Portfolio.objects.get_or_create(
+        worker=wp,
+        title=p_data["title"],
+        defaults={
+            "description": p_data["description"],
+            "category": cats[p_data["category_name"]]
+        }
+    )
+    if created or not p.image:
+        try:
+            print(f"  Downloading image for '{p_data['title']}'...")
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+            req = urllib.request.Request(p_data["img_url"], headers=headers)
+            with urllib.request.urlopen(req, timeout=10) as response:
+                img_temp = NamedTemporaryFile(delete=True)
+                img_temp.write(response.read())
+                img_temp.flush()
+                p.image.save(f"portfolio_{p_data['worker_username']}.jpg", File(img_temp), save=True)
+            print(f"    Saved portfolio: {p.title}")
+        except Exception as e:
+            print(f"    Failed to download image: {e}")
+            pass
+
 print("\n=== Seed Complete! ===")
 print(f"  Workers: {len(workers_data)}")
 print(f"  Clients: {len(clients_data)}")
@@ -307,4 +380,5 @@ print(f"  Services: {len(all_services)}")
 print(f"  Orders: {len(orders_data)}")
 print(f"  Reviews: {len(reviews_data)}")
 print(f"  Conversations: {len(convos_data)}")
+print(f"  Portfolios: {len(portfolios_data)}")
 print(f"\n  All demo accounts use password: Demo1234!")

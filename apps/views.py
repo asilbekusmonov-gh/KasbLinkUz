@@ -26,6 +26,7 @@ from apps.models import (
     Portfolio,
     Review,
     User,
+    Notification,
 )
 from apps.models.users import City, District
 from apps.permissions import IsClient, IsOwner, IsWorker
@@ -44,6 +45,7 @@ from apps.serializers import (
     WorkerProfileSerializer,
     PortfolioSerializer,
     ReviewSerializer,
+    NotificationSerializer,
 )
 from apps.tasks import send_order_placed_email, send_order_status_email, send_welcome_email
 
@@ -127,7 +129,9 @@ class PortfolioViewSet(ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        return qs.filter(worker__user=self.request.user)
+        if self.request.query_params.get("me") == "true" or self.action in ["update", "partial_update", "destroy"]:
+            return qs.filter(worker__user=self.request.user)
+        return qs
 
     def perform_create(self, serializer):
         if not hasattr(self.request.user, "worker_profile"):
@@ -197,12 +201,19 @@ class ConversationViewSet(ModelViewSet):
         user = self.request.user
         return qs.filter(Q(client=user) | Q(worker=user))
 
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    def mark_read(self, request, pk=None):
+        conversation = self.get_object()
+        conversation.messages.filter(~Q(sender=request.user), is_read=False).update(is_read=True)
+        return Response({"status": "messages marked as read"})
+
 
 @extend_schema(tags=["Message"])
 class MessageViewSet(ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -308,3 +319,18 @@ class FavouriteViewSet(
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(client=self.request.user)
+
+
+@extend_schema(tags=["Notification"])
+class NotificationViewSet(GenericViewSet, mixins.ListModelMixin, mixins.UpdateModelMixin):
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user)
+
+    @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
+    def mark_all_read(self, request):
+        Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+        return Response({"status": "all notifications marked as read"})
+

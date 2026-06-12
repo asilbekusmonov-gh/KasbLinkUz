@@ -15,6 +15,7 @@ from apps.models import (
     User,
     WorkerProfile,
     Portfolio,
+    Notification,
 )
 from apps.models.users import City, District
 
@@ -82,12 +83,6 @@ class DistrictModelSerializer(ModelSerializer):
         fields = "__all__"
 
 
-class PortfolioSerializer(ModelSerializer):
-    class Meta:
-        model = Portfolio
-        fields = "__all__"
-
-
 class CategoryModelSerializer(ModelSerializer):
     class Meta:
         model = Category
@@ -110,6 +105,15 @@ class WorkerProfileDetailSerializer(ModelSerializer):
             "is_available",
             "user_detail",
         ]
+
+
+class PortfolioSerializer(ModelSerializer):
+    worker_detail = WorkerProfileDetailSerializer(source="worker", read_only=True)
+    category_detail = CategoryModelSerializer(source="category", read_only=True)
+
+    class Meta:
+        model = Portfolio
+        fields = "__all__"
 
 
 class ServiceSerializer(ModelSerializer):
@@ -238,3 +242,10 @@ class FavouriteSerializer(ModelSerializer):
     class Meta:
         model = Favourite
         fields = "__all__"
+
+
+class NotificationSerializer(ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = "__all__"
+

@@ -17,6 +17,7 @@ from apps.views import (
     ReviewViewSet,
     ReviewImageViewSet,
     FavouriteViewSet,
+    NotificationViewSet,
     RegisterView,
 )
 
@@ -33,6 +34,8 @@ router.register(r"order-images", OrderImageViewSet, basename="order-image")
 router.register(r"reviews", ReviewViewSet, basename="review")
 router.register(r"review-images", ReviewImageViewSet, basename="review-image")
 router.register(r"favourites", FavouriteViewSet, basename="favourite")
+router.register(r"notifications", NotificationViewSet, basename="notification")
+
 
 urlpatterns = [
     path("", include(router.urls)),
