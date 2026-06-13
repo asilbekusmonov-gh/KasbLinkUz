@@ -47,6 +47,12 @@ class UserSerializer(ModelSerializer):
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
 
+    def validate_phone_number(self, value):
+        if not value.isdigit():
+            raise ValidationError("The error occurred in phone number!")
+
+        return value
+
 
 class WorkerProfileSerializer(ModelSerializer):
     user = HiddenField(default=CurrentUserDefault())
@@ -248,4 +254,3 @@ class NotificationSerializer(ModelSerializer):
     class Meta:
         model = Notification
         fields = "__all__"
-
