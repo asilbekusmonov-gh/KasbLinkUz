@@ -53,7 +53,7 @@ class WorkerProfile(Model):
     completed_orders_count = PositiveIntegerField(default=0)
     is_available = BooleanField(default=True)
     user = OneToOneField(
-        "apps.User", CASCADE, related_name="worker_profile", limit_choices_to={"role": User.Role.WORKER}
+        "apps.User", CASCADE, related_name="worker_profile", limit_choices_to={"role": User.is_worker}
     )
     service_districts = ManyToManyField("apps.District", related_name="workers", blank=True)
 
