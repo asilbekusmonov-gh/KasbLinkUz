@@ -12,6 +12,7 @@ Clients discover and hire verified workers. Built with Django REST Framework.
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)](https://postgresql.org)
 [![Redis](https://img.shields.io/badge/Redis-7.x-red?logo=redis)](https://redis.io)
 [![Celery](https://img.shields.io/badge/Celery-5.x-green?logo=celery)](https://docs.celeryq.dev)
+[![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://www.docker.com/)
 [![Tests](https://img.shields.io/badge/Tests-23%20passing-brightgreen)](https://github.com/asilbekusmonov-gh/KasbLinkUz)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -101,6 +102,7 @@ This repository is the **backend API only**. Designed to be consumed by any fron
 | Filtering | `django-filter` |
 | Linting | Ruff |
 | Testing | pytest + pytest-django (23 tests) |
+| Containerization | Docker + Docker Compose |
 | CI/CD | GitHub Actions |
 | Deployment | Railway |
 
@@ -137,6 +139,8 @@ kasblink/
 │   ├── settings.py
 │   ├── celery.py
 │   └── urls.py
+├── Dockerfile
+├── docker-compose.yml
 ├── pyproject.toml
 └── manage.py
 ```
@@ -157,6 +161,8 @@ kasblink/
 
 **Signals for auto-calculated fields** — Worker `rating` and `completed_orders_count` are automatically updated via Django signals when orders complete and reviews are created.
 
+**Dockerized development environment** — `docker-compose.yml` spins up the Django app, PostgreSQL, and Redis together with a single command, ensuring a consistent setup across machines.
+
 ---
 
 ## CI/CD
@@ -169,6 +175,62 @@ Every push to `master` automatically:
 3. Runs ruff linting
 4. Runs 23 pytest tests
 5. Deploys to Railway only if all tests pass
+```
+
+---
+
+## Running with Docker
+
+The fastest way to run the full stack locally — no need to install Python, PostgreSQL, or Redis manually.
+
+### Prerequisites
+
+- Docker
+- Docker Compose
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/asilbekusmonov-gh/KasbLinkUz.git
+cd KasbLinkUz
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+### 3. Build and start all services
+
+```bash
+docker compose up
+```
+
+This starts:
+
+```
+backend  → Django app on http://localhost:8000
+postgres → PostgreSQL database
+redis    → Redis cache / Celery broker
+```
+
+### 4. Run migrations (in a separate terminal)
+
+```bash
+docker compose exec backend uv run python manage.py migrate
+```
+
+### 5. Create a superuser
+
+```bash
+docker compose exec backend uv run python manage.py createsuperuser
+```
+
+### 6. Run tests inside Docker
+
+```bash
+docker compose exec backend uv run pytest -v
 ```
 
 ---
@@ -202,7 +264,7 @@ Tests use `reverse()` for URL resolution and `status.HTTP_*` constants for clean
 
 ---
 
-## Quick Start
+## Quick Start (without Docker)
 
 ### Prerequisites
 
