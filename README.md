@@ -140,7 +140,6 @@ kasblink/
 │   ├── celery.py
 │   └── urls.py
 ├── Dockerfile
-├── docker-compose.yml
 ├── pyproject.toml
 └── manage.py
 ```
