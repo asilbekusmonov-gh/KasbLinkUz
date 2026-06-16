@@ -15,6 +15,7 @@ from datetime import datetime, timezone  # noqa: E402
 from decimal import Decimal  # noqa: E402
 from django.core.files import File  # noqa: E402
 from apps.models import User, WorkerProfile, Category, Service, Order, Conversation, Message, Review, Portfolio  # noqa: E402
+from apps.models.users import District  # noqa: E402
 
 print("=== Seeding KasbLink Demo Data ===\n")
 
@@ -143,6 +144,11 @@ for wd in workers_data:
         }
     )
     worker_profiles[wd["username"]] = wp
+    
+    # Assign some districts
+    districts = list(District.objects.order_by('?')[:3])
+    if districts:
+        wp.service_districts.set(districts)
 
     for sname, sdesc, scat, smin, smax in wd["services"]:
         svc, _ = Service.objects.get_or_create(
@@ -313,35 +319,35 @@ portfolios_data = [
         "title": "Modern Bathroom Remodel",
         "description": "Complete overhaul of master bathroom piping and faucet fixtures. Installed copper plumbing and high-end wall-mounted toilets.",
         "category_name": "Plumbing",
-        "img_url": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&auto=format&fit=crop"
+        "local_img": "demo_images/bathroom_plumbing.png"
     },
     {
         "worker_username": "aziz_electric",
         "title": "Smart Home Control Panel Setup",
         "description": "Installation of a modern smart lighting circuit breaker panel. Custom programmed dimmers, sensors, and remote app integration.",
         "category_name": "Electrical",
-        "img_url": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&auto=format&fit=crop"
+        "local_img": "demo_images/smart_home_panel.png"
     },
     {
         "worker_username": "malika_clean",
         "title": "Post-Renovation House Clean",
         "description": "Intense deep cleaning of a 4-bedroom villa after construction. All paint residues, dust, and construction debris completely removed.",
         "category_name": "Cleaning",
-        "img_url": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&auto=format&fit=crop"
+        "local_img": "demo_images/house_clean.png"
     },
     {
         "worker_username": "rustam_painter",
         "title": "Feature Accent Wall Painting",
         "description": "High-end geometric feature wall painting in a modern minimalist apartment. Used premium matte textured eco-paints.",
         "category_name": "Painting",
-        "img_url": "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&auto=format&fit=crop"
+        "local_img": "demo_images/accent_wall.png"
     },
     {
         "worker_username": "bobur_wood",
         "title": "Handcrafted Walnut Bookshelves",
         "description": "Custom floor-to-ceiling bookshelves made from solid dark walnut wood, complete with integrated LED backlight panels.",
         "category_name": "Carpentry",
-        "img_url": "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=600&auto=format&fit=crop"
+        "local_img": "demo_images/walnut_bookshelves.png"
     }
 ]
 
@@ -360,17 +366,17 @@ for p_data in portfolios_data:
     )
     if created or not p.image:
         try:
-            print(f"  Downloading image for '{p_data['title']}'...")
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-            req = urllib.request.Request(p_data["img_url"], headers=headers)
-            with urllib.request.urlopen(req, timeout=10) as response:
-                img_temp = NamedTemporaryFile(delete=True)
-                img_temp.write(response.read())
-                img_temp.flush()
-                p.image.save(f"portfolio_{p_data['worker_username']}.jpg", File(img_temp), save=True)
-            print(f"    Saved portfolio: {p.title}")
+            print(f"  Setting image for '{p_data['title']}'...")
+            from django.conf import settings
+            local_path = os.path.join(settings.BASE_DIR, p_data["local_img"])
+            if os.path.exists(local_path):
+                with open(local_path, "rb") as f:
+                    p.image.save(f"portfolio_{p_data['worker_username']}.png", File(f), save=True)
+                print(f"    Saved portfolio: {p.title}")
+            else:
+                print(f"    Local image not found: {local_path}")
         except Exception as e:
-            print(f"    Failed to download image: {e}")
+            print(f"    Failed to set image: {e}")
             pass
 
 print("\n=== Seed Complete! ===")
