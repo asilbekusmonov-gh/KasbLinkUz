@@ -319,35 +319,35 @@ portfolios_data = [
         "title": "Modern Bathroom Remodel",
         "description": "Complete overhaul of master bathroom piping and faucet fixtures. Installed copper plumbing and high-end wall-mounted toilets.",
         "category_name": "Plumbing",
-        "local_img": "demo_images/bathroom_plumbing.png"
+        "demo_img_name": "bathroom_plumbing.png"
     },
     {
         "worker_username": "aziz_electric",
         "title": "Smart Home Control Panel Setup",
         "description": "Installation of a modern smart lighting circuit breaker panel. Custom programmed dimmers, sensors, and remote app integration.",
         "category_name": "Electrical",
-        "local_img": "demo_images/smart_home_panel.png"
+        "demo_img_name": "smart_home_panel.png"
     },
     {
         "worker_username": "malika_clean",
         "title": "Post-Renovation House Clean",
         "description": "Intense deep cleaning of a 4-bedroom villa after construction. All paint residues, dust, and construction debris completely removed.",
         "category_name": "Cleaning",
-        "local_img": "demo_images/house_clean.png"
+        "demo_img_name": "house_clean.png"
     },
     {
         "worker_username": "rustam_painter",
         "title": "Feature Accent Wall Painting",
         "description": "High-end geometric feature wall painting in a modern minimalist apartment. Used premium matte textured eco-paints.",
         "category_name": "Painting",
-        "local_img": "demo_images/accent_wall.png"
+        "demo_img_name": "accent_wall.png"
     },
     {
         "worker_username": "bobur_wood",
         "title": "Handcrafted Walnut Bookshelves",
         "description": "Custom floor-to-ceiling bookshelves made from solid dark walnut wood, complete with integrated LED backlight panels.",
         "category_name": "Carpentry",
-        "local_img": "demo_images/walnut_bookshelves.png"
+        "demo_img_name": "walnut_bookshelves.png"
     }
 ]
 
@@ -367,14 +367,9 @@ for p_data in portfolios_data:
     if created or not p.image:
         try:
             print(f"  Setting image for '{p_data['title']}'...")
-            from django.conf import settings
-            local_path = os.path.join(settings.BASE_DIR, p_data["local_img"])
-            if os.path.exists(local_path):
-                with open(local_path, "rb") as f:
-                    p.image.save(f"portfolio_{p_data['worker_username']}.png", File(f), save=True)
-                print(f"    Saved portfolio: {p.title}")
-            else:
-                print(f"    Local image not found: {local_path}")
+            p.image = f"portfolio/demo/{p_data['demo_img_name']}"
+            p.save()
+            print(f"    Saved portfolio: {p.title}")
         except Exception as e:
             print(f"    Failed to set image: {e}")
             pass
