@@ -14,47 +14,49 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 
+from apps.filters import WorkerFilter
+from apps.models import (
+    User,
+    WorkerProfile,
+    Portfolio,
+    Category,
+    Service,
+    Notification,
+    Favourite,
+    ReviewImage,
+    Review,
+    OrderImage,
+    Order,
+    Message,
+    Conversation,
+)
+from apps.models.users import City, District
+from apps.permissions import IsOwner, IsWorker, IsClient
+from apps.serializers import (
+    UserSerializer,
+    WorkerProfileSerializer,
+    PortfolioSerializer,
+    CategoryModelSerializer,
+    CityModelSerializer,
+    DistrictModelSerializer,
+    ServiceSerializer,
+    NotificationSerializer,
+    FavouriteSerializer,
+    ReviewImageSerializer,
+    ReviewSerializer,
+    OrderImageSerializer,
+    OrderSerializer,
+    MessageSerializer,
+    ConversationSerializer,
+)
+from apps.tasks import send_welcome_email, send_order_status_email, send_order_placed_email
+
+
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = 'page_size'
     max_page_size = 100
 
-from apps.filters import WorkerFilter
-from apps.models import (
-    Category,
-    Service,
-    Conversation,
-    Message,
-    Order,
-    OrderImage,
-    ReviewImage,
-    Favourite,
-    WorkerProfile,
-    Portfolio,
-    Review,
-    User,
-    Notification,
-)
-from apps.models.users import City, District
-from apps.permissions import IsClient, IsOwner, IsWorker
-from apps.serializers import (
-    CategoryModelSerializer,
-    CityModelSerializer,
-    DistrictModelSerializer,
-    ServiceSerializer,
-    ConversationSerializer,
-    MessageSerializer,
-    OrderSerializer,
-    OrderImageSerializer,
-    ReviewImageSerializer,
-    FavouriteSerializer,
-    UserSerializer,
-    WorkerProfileSerializer,
-    PortfolioSerializer,
-    ReviewSerializer,
-    NotificationSerializer,
-)
-from apps.tasks import send_order_placed_email, send_order_status_email, send_welcome_email
 
 
 @extend_schema(tags=["Users"])
