@@ -162,7 +162,9 @@ CELERY_TIMEZONE = "Asia/Tashkent"
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "KasbLink <noreply@kasblink.com>"
 
-
+import sys
+if 'test' in sys.argv or 'pytest' in sys.modules:
+    CELERY_TASK_ALWAYS_EAGER = True
 # WebSocket / Django Channels
 ASGI_APPLICATION = "root.asgi.application"
 
