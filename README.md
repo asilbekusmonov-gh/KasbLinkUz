@@ -22,11 +22,11 @@ Clients discover and hire verified workers. Built with Django REST Framework.
 
 ## 🌐 Live Demo
 
-| | URL |
-|---|---|
-| API Base | https://kasblinkuz-production.up.railway.app |
+| | URL                                                                 |
+|---|---------------------------------------------------------------------|
+| Live Platform | https://kasblinkuz-frontend-production.up.railway.app               |
 | Swagger Docs | https://kasblinkuz-production.up.railway.app/api/schema/swagger-ui/ |
-| Admin Panel | https://kasblinkuz-production.up.railway.app/admin/ |
+| Admin Panel | https://kasblinkuz-production.up.railway.app/admin/                 |
 
 ---
 
@@ -426,6 +426,7 @@ API docs at `http://localhost:8000/api/schema/swagger-ui/`
 | `DATABASE_URL` | ✅ | PostgreSQL connection string |
 | `ALLOWED_HOSTS` | ✅ | Comma-separated allowed hosts |
 | `CORS_ALLOWED_ORIGINS` | ✅ | Frontend origin URLs |
+| `FRONTEND_URL` | ❌ | URL to redirect from base URL (default: http://localhost:3000) |
 
 See `.env.example` for full template.
 

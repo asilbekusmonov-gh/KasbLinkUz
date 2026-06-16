@@ -11,6 +11,13 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 from apps.filters import WorkerFilter
 from apps.models import (
@@ -126,6 +133,10 @@ class PortfolioViewSet(ModelViewSet):
     queryset = Portfolio.objects.all()
     serializer_class = PortfolioSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['category']
+    search_fields = ['title', 'description', 'worker__user__first_name', 'worker__user__last_name']
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -171,6 +182,10 @@ class DistrictListApi(ListAPIView):
 class ServiceViewSet(ModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['category']
+    search_fields = ['name', 'description']
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:

@@ -3,6 +3,9 @@ Seed script to populate KasbLink with realistic demo data.
 Run via: uv run python manage.py shell < seed_data.py
 """
 import os
+import urllib
+from tempfile import NamedTemporaryFile
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "root.settings")
 
 import django
@@ -10,7 +13,8 @@ django.setup()
 
 from datetime import datetime, timezone
 from decimal import Decimal
-from apps.models import User, WorkerProfile, Category, Service, Order, Conversation, Message, Review
+from django.core.files import File
+from apps.models import User, WorkerProfile, Category, Service, Order, Conversation, Message, Review, Portfolio
 
 print("=== Seeding KasbLink Demo Data ===\n")
 
@@ -302,10 +306,6 @@ for ci, wname, msgs in convos_data:
 
 # --- Portfolios ---
 print("\n--- Creating Portfolios ---")
-import urllib.request
-from django.core.files.temp import NamedTemporaryFile
-from django.core.files import File
-from apps.models import Portfolio
 
 portfolios_data = [
     {

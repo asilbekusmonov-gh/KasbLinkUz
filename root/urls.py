@@ -7,8 +7,10 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.conf import settings
 from root.settings import MEDIA_URL, MEDIA_ROOT
 
+import os
+
 urlpatterns = [
-    path("", RedirectView.as_view(url="/api/schema/swagger-ui/")),
+    path("", RedirectView.as_view(url=os.getenv("FRONTEND_URL", "http://localhost:3000"))),
     path("admin/", admin.site.urls),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
