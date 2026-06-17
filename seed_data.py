@@ -367,6 +367,21 @@ for p_data in portfolios_data:
     if created or not p.image:
         try:
             print(f"  Setting image for '{p_data['title']}'...")
+            
+            import shutil
+            import os
+            from django.conf import settings
+            
+            demo_media_dir = os.path.join(settings.BASE_DIR, "demo_media")
+            target_dir = os.path.join(settings.MEDIA_ROOT, "portfolio", "demo")
+            os.makedirs(target_dir, exist_ok=True)
+            
+            src = os.path.join(demo_media_dir, p_data['demo_img_name'])
+            dst = os.path.join(target_dir, p_data['demo_img_name'])
+            
+            if os.path.exists(src) and not os.path.exists(dst):
+                shutil.copy2(src, dst)
+
             p.image = f"portfolio/demo/{p_data['demo_img_name']}"
             p.save()
             print(f"    Saved portfolio: {p.title}")
