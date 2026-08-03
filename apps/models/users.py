@@ -16,7 +16,6 @@ from django.db.models import (
 )
 
 from apps.models import TimeStampedModel
-
 from apps.models.managers import CustomUserManager
 
 
