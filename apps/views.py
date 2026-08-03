@@ -11,7 +11,9 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import PageNumberPagination, CursorPagination
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.filters import WorkerFilter
@@ -56,6 +58,11 @@ class StandardResultsSetPagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = 'page_size'
     max_page_size = 100
+
+class StandardCursorPagination(CursorPagination):
+    page_size = 5
+    page_size_query_param = 'page_size'
+    ordering = '-created_at'
 
 
 
@@ -135,7 +142,7 @@ class PortfolioViewSet(ModelViewSet):
     queryset = Portfolio.objects.all()
     serializer_class = PortfolioSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    pagination_class = StandardResultsSetPagination
+    pagination_class = StandardCursorPagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ['category']
     search_fields = ['title', 'description', 'worker__user__first_name', 'worker__user__last_name']
@@ -154,6 +161,7 @@ class PortfolioViewSet(ModelViewSet):
 
 
 @extend_schema(tags=["Category"])
+@method_decorator(cache_page(60 * 15), name='dispatch')
 class CategoryListApi(ListAPIView):
     queryset = Category.objects.defer("slug")
     serializer_class = CategoryModelSerializer
@@ -161,6 +169,7 @@ class CategoryListApi(ListAPIView):
 
 
 @extend_schema(tags=["Location"])
+@method_decorator(cache_page(60 * 15), name='dispatch')
 class CityListApi(ListAPIView):
     queryset = City.objects.order_by("name")
     serializer_class = CityModelSerializer
@@ -168,6 +177,7 @@ class CityListApi(ListAPIView):
 
 
 @extend_schema(tags=["Location"])
+@method_decorator(cache_page(60 * 15), name='dispatch')
 class DistrictListApi(ListAPIView):
     serializer_class = DistrictModelSerializer
     permission_classes = [AllowAny]
@@ -184,7 +194,7 @@ class DistrictListApi(ListAPIView):
 class ServiceViewSet(ModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
-    pagination_class = StandardResultsSetPagination
+    pagination_class = StandardCursorPagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ['category']
     search_fields = ['name', 'description']
@@ -251,6 +261,7 @@ class OrderViewSet(
 ):
     queryset = Order.objects.select_related("client", "service", "service__worker")
     serializer_class = OrderSerializer
+    pagination_class = StandardCursorPagination
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):

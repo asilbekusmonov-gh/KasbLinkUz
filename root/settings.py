@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -89,6 +90,16 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "fallback-secret-key-for-dev")
 
 DATABASES = {"default": dj_database_url.config(default=os.getenv("DATABASE_URL"), conn_max_age=600)}
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
@@ -164,7 +175,7 @@ CELERY_TIMEZONE = "Asia/Tashkent"
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "KasbLink <noreply@kasblink.com>"
 
-import sys
+
 if 'test' in sys.argv or 'pytest' in sys.modules:
     CELERY_TASK_ALWAYS_EAGER = True
 # WebSocket / Django Channels
@@ -177,26 +188,4 @@ CHANNEL_LAYERS = {
             "hosts": [("localhost", 6379)],
         },
     },
-}
-
-LOGGING = {
-    'version': 1,
-    'filters': {
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        }
-    },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'filters': ['require_debug_true'],
-            'class': 'logging.StreamHandler',
-        }
-    },
-    'loggers': {
-        'django.db.backends': {
-            'level': 'DEBUG',
-            'handlers': ['console'],
-        }
-    }
 }

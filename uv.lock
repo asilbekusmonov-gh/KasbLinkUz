@@ -653,6 +653,7 @@ dependencies = [
     { name = "pytest-django" },
     { name = "python-dotenv" },
     { name = "redis" },
+    { name = "ruff" },
 ]
 
 [package.dev-dependencies]
@@ -686,6 +687,7 @@ requires-dist = [
     { name = "pytest-django", specifier = ">=4.12.0" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "redis", specifier = ">=7.4.0" },
+    { name = "ruff", specifier = ">=0.15.16" },
 ]
 
 [package.metadata.requires-dev]

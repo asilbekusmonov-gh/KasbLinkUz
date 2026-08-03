@@ -26,7 +26,7 @@ class User(AbstractUser):
         CUSTOMER = "customer", "CUSTOMER"
         ADMIN = "admin", "ADMIN"
 
-    role = CharField(max_length=15, choices=Role.choices, default=Role.CUSTOMER)
+    role = CharField(max_length=15, choices=Role.choices, default=Role.CUSTOMER, db_index=True)
     phone_number = CharField(unique=True, max_length=9)
     profile_image = ImageField(upload_to="users/%Y/%m/%d", null=True, blank=True)
     objects = CustomUserManager()
@@ -49,11 +49,11 @@ class WorkerProfile(Model):
     bio = CharField(max_length=255)
     work_start_time = DateTimeField()
     work_end_time = DateTimeField()
-    rating = DecimalField(max_digits=2, decimal_places=1, default=0.0)
+    rating = DecimalField(max_digits=2, decimal_places=1, default=0.0, db_index=True)
     completed_orders_count = PositiveIntegerField(default=0)
-    is_available = BooleanField(default=True)
+    is_available = BooleanField(default=True, db_index=True)
     user = OneToOneField(
-        "apps.User", CASCADE, related_name="worker_profile", limit_choices_to={"role": User.is_worker}
+        "apps.User", CASCADE, related_name="worker_profile", limit_choices_to={"role": User.Role.WORKER}
     )
     service_districts = ManyToManyField("apps.District", related_name="workers", blank=True)
 

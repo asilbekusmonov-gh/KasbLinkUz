@@ -60,6 +60,11 @@ This repository is the **backend API only**. Designed to be consumed by any fron
 - Email notification when order is cancelled
 - New message email notification
 
+### Performance & Scalability
+- **Redis Caching**: Read-heavy endpoints (Categories, Locations) are cached via `django-redis` to prevent database overload and ensure sub-millisecond response times.
+- **Database Indexing**: B-Tree indexes (`db_index=True`) applied to frequently filtered fields (`status`, `rating`, `is_available`, `role`, `active`) to prevent full table scans.
+- **Cursor Pagination**: Replaced traditional offset/limit pagination with `CursorPagination` for primary listing endpoints (Services, Orders) to guarantee constant query speeds at scale.
+
 ### API & Developer Experience
 - RESTful API with versioning (`/api/v1/`)
 - Auto-generated Swagger / ReDoc documentation

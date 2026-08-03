@@ -11,8 +11,8 @@ import django
 
 django.setup()
 
-from apps.models.users import City, District
-from pathlib import Path
+from apps.models.users import City, District  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 

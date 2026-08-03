@@ -14,7 +14,7 @@ class Order(TimeStampedModel):
     title = CharField(max_length=100)
     description = TextField()
     address = CharField(max_length=100)
-    status = CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    status = CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
 
     client = ForeignKey("apps.User", on_delete=CASCADE, related_name="client_orders")
     worker = ForeignKey("apps.WorkerProfile", on_delete=CASCADE, related_name="worker_orders")
