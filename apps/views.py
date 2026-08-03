@@ -1,57 +1,56 @@
 from django.db.models import Q
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
-from rest_framework import status
-from rest_framework import viewsets, mixins
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import CreateAPIView, ListAPIView
+from rest_framework.pagination import CursorPagination, PageNumberPagination
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.pagination import PageNumberPagination, CursorPagination
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
-from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.filters import WorkerFilter
 from apps.models import (
+    Category,
+    Conversation,
+    Favourite,
+    Message,
+    Notification,
+    Order,
+    OrderImage,
+    Portfolio,
+    Review,
+    ReviewImage,
+    Service,
     User,
     WorkerProfile,
-    Portfolio,
-    Category,
-    Service,
-    Notification,
-    Favourite,
-    ReviewImage,
-    Review,
-    OrderImage,
-    Order,
-    Message,
-    Conversation,
 )
 from apps.models.users import City, District
-from apps.permissions import IsOwner, IsWorker, IsClient
+from apps.permissions import IsClient, IsOwner, IsWorker
 from apps.serializers import (
-    UserSerializer,
-    WorkerProfileSerializer,
-    PortfolioSerializer,
     CategoryModelSerializer,
     CityModelSerializer,
+    ConversationSerializer,
     DistrictModelSerializer,
-    ServiceSerializer,
-    NotificationSerializer,
     FavouriteSerializer,
-    ReviewImageSerializer,
-    ReviewSerializer,
+    MessageSerializer,
+    NotificationSerializer,
     OrderImageSerializer,
     OrderSerializer,
-    MessageSerializer,
-    ConversationSerializer,
+    PortfolioSerializer,
+    ReviewImageSerializer,
+    ReviewSerializer,
+    ServiceSerializer,
+    UserSerializer,
+    WorkerProfileSerializer,
 )
-from apps.tasks import send_welcome_email, send_order_status_email, send_order_placed_email
+from apps.tasks import send_order_placed_email, send_order_status_email, send_welcome_email
 
 
 class StandardResultsSetPagination(PageNumberPagination):

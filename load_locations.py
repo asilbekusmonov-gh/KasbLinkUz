@@ -22,7 +22,7 @@ def load_locations():
     districts_path = DATA_DIR / "districts.csv"
 
     if not regions_path.exists() or not districts_path.exists():
-        raise FileNotFoundError(f"Missing CSV files in {DATA_DIR}")
+        raise FileNotFoundError(f"Missing CSV files inn {DATA_DIR}")
 
     print("Loading regions (cities)...")
     with regions_path.open(encoding="utf-8-sig") as f:

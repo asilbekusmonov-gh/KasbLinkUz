@@ -1,4 +1,4 @@
-from django_filters import NumberFilter, FilterSet
+from django_filters import FilterSet, NumberFilter
 
 from apps.models import WorkerProfile
 

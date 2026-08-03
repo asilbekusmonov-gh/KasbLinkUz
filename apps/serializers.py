@@ -1,21 +1,22 @@
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import ImageField as DRFImageField, CharField, HiddenField, CurrentUserDefault
+from rest_framework.fields import CharField, CurrentUserDefault, HiddenField
+from rest_framework.fields import ImageField as DRFImageField
 from rest_framework.serializers import ModelSerializer
 
 from apps.models import (
     Category,
-    Service,
     Conversation,
+    Favourite,
     Message,
+    Notification,
     Order,
     OrderImage,
+    Portfolio,
     Review,
     ReviewImage,
-    Favourite,
+    Service,
     User,
     WorkerProfile,
-    Portfolio,
-    Notification,
 )
 from apps.models.users import City, District
 
@@ -70,8 +71,7 @@ class WorkerProfileSerializer(ModelSerializer):
     def validate(self, data):
         request = self.context.get("request")
 
-        if request and request.method == "POST":
-            if WorkerProfile.objects.filter(user=request.user).exists():
+        if request and request.method == "POST" and WorkerProfile.objects.filter(user=request.user).exists():
                 raise ValidationError("User can only have one worker profile")
 
         return data
@@ -229,8 +229,7 @@ class ReviewSerializer(ModelSerializer):
         order = data.get("order")
         request = self.context.get("request")
 
-        if order and request:
-            if order.status != "completed":
+        if order and request and order.status != "completed":
                 raise ValidationError("Order is not completed yet")
 
         if Review.objects.filter(client=request.user, order=order).exists():

@@ -1,18 +1,18 @@
 from django.contrib.auth.models import AbstractUser
 from django.db.models import (
-    CharField,
-    TextChoices,
-    Model,
-    DecimalField,
-    PositiveIntegerField,
-    BooleanField,
-    OneToOneField,
     CASCADE,
-    ImageField,
-    ForeignKey,
-    TextField,
+    BooleanField,
+    CharField,
     DateTimeField,
+    DecimalField,
+    ForeignKey,
+    ImageField,
     ManyToManyField,
+    Model,
+    OneToOneField,
+    PositiveIntegerField,
+    TextChoices,
+    TextField,
 )
 
 from apps.models import TimeStampedModel

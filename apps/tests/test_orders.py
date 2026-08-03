@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.models import User, WorkerProfile, Category, Service
+from apps.models import Category, Service, User, WorkerProfile
 
 
 @pytest.fixture
@@ -35,8 +35,8 @@ def worker_profile(worker_user):
         bio="Test bio",
         rating=0,
         completed_orders_count=0,
-        work_start_time=datetime.datetime(2026, 1, 1, 9, 0, tzinfo=datetime.timezone.utc),
-        work_end_time=datetime.datetime(2026, 1, 1, 18, 0, tzinfo=datetime.timezone.utc),
+        work_start_time=datetime.datetime(2026, 1, 1, 9, 0, tzinfo=datetime.UTC),
+        work_end_time=datetime.datetime(2026, 1, 1, 18, 0, tzinfo=datetime.UTC),
     )
 
 

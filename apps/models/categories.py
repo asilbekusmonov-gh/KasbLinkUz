@@ -1,12 +1,12 @@
 from django.db.models import (
-    Model,
-    CharField,
-    SlugField,
-    PositiveIntegerField,
-    TextField,
-    ForeignKey,
     CASCADE,
     BooleanField,
+    CharField,
+    ForeignKey,
+    Model,
+    PositiveIntegerField,
+    SlugField,
+    TextField,
 )
 
 from apps.models import TimeStampedModel

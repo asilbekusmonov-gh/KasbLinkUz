@@ -1,8 +1,8 @@
 from celery import shared_task
+from django.conf import settings
 from django.core.mail import send_mail
 
-from apps.models import User, Order
-from django.conf import settings
+from apps.models import Order, User
 
 
 @shared_task

@@ -167,7 +167,7 @@ for wd in workers_data:
 
 # --- Client Users ---
 clients_data = [
-    {"username": "sardor_client", "first_name": "Sardor", "last_name": "Umarov", "phone_number": "901234510"},
+    {"username": "sardor_clienttt", "first_name": "Sardor", "last_name": "Umarov", "phone_number": "901234510"},
     {"username": "nodira_client", "first_name": "Nodira", "last_name": "Abdullaeva", "phone_number": "901234511"},
     {"username": "jamshid_client", "first_name": "Jamshid", "last_name": "Khodjaev", "phone_number": "901234512"},
 ]

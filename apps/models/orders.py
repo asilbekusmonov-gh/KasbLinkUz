@@ -1,4 +1,4 @@
-from django.db.models import Model, CharField, TextField, DecimalField, OneToOneField, CASCADE, ForeignKey, ImageField
+from django.db.models import CASCADE, CharField, DecimalField, ForeignKey, ImageField, Model, OneToOneField, TextField
 from django.db.models.enums import TextChoices
 
 from apps.models import TimeStampedModel

@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from apps.models import Order, Message, Notification, Review
+from apps.models import Message, Notification, Order, Review
 
 
 @receiver(post_save, sender=Order)

@@ -1,8 +1,8 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
 from django.db.models import CASCADE, BooleanField
 from django.db.models.enums import TextChoices
-from django.db.models.fields import TextField, CharField
+from django.db.models.fields import CharField, TextField
 
 from apps.models.base import TimeStampedModel
 
