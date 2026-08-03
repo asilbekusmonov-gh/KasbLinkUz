@@ -35,8 +35,8 @@ def worker_profile(worker_user):
         bio="Test bio",
         rating=0,
         completed_orders_count=0,
-        work_start_time=timezone.make_aware(datetime.datetime(2026, 1, 1, 9, 0)),
-        work_end_time=timezone.make_aware(datetime.datetime(2026, 1, 1, 18, 0)),
+        work_start_time=datetime.datetime(2026, 1, 1, 9, 0, tzinfo=datetime.timezone.utc),
+        work_end_time=datetime.datetime(2026, 1, 1, 18, 0, tzinfo=datetime.timezone.utc),
     )
 
 
