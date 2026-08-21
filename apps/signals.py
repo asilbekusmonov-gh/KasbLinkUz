@@ -9,13 +9,6 @@ def update_worker_stats(sender, instance, created, **kwargs):
     if not created and instance.status == "completed":
         worker_profile = instance.service.worker
         worker_profile.completed_orders_count += 1
-
-        reviews = Review.objects.filter(order__service__worker=worker_profile)
-
-        if reviews.exists():
-            total = sum(r.rating for r in reviews)
-            worker_profile.rating = round(total / reviews.count(), 1)
-
         worker_profile.save()
 
     if created:
@@ -63,3 +56,14 @@ def message_created_notification(sender, instance, created, **kwargs):
             title=f"New message from {sender_name}",
             description=msg_preview,
         )
+
+
+@receiver(post_save, sender=Review)
+def update_worker_rating_on_review(sender, instance, created, **kwargs):
+    """Recalculate and save worker rating whenever a review is created or updated."""
+    worker_profile = instance.order.service.worker
+    reviews = Review.objects.filter(order__service__worker=worker_profile)
+    if reviews.exists():
+        total = sum(r.rating for r in reviews)
+        worker_profile.rating = round(total / reviews.count(), 1)
+        worker_profile.save(update_fields=["rating"])

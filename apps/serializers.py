@@ -1,6 +1,7 @@
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import CharField, CurrentUserDefault, HiddenField
 from rest_framework.fields import ImageField as DRFImageField
+from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer
 
 from apps.models import (
@@ -58,7 +59,9 @@ class UserSerializer(ModelSerializer):
 class WorkerProfileSerializer(ModelSerializer):
     user = HiddenField(default=CurrentUserDefault())
     user_id = CharField(source="user.id", read_only=True)
+    user_detail = UserSerializer(source="user", read_only=True)
     profile_image = DRFImageField(required=False, use_url=True)
+    bio = CharField(allow_blank=True, required=False)
 
     class Meta:
         model = WorkerProfile
@@ -116,15 +119,18 @@ class WorkerProfileDetailSerializer(ModelSerializer):
 class PortfolioSerializer(ModelSerializer):
     worker_detail = WorkerProfileDetailSerializer(source="worker", read_only=True)
     category_detail = CategoryModelSerializer(source="category", read_only=True)
+    description = CharField(allow_blank=True, required=False)
 
     class Meta:
         model = Portfolio
         fields = "__all__"
+        read_only_fields = ("worker",)
 
 
 class ServiceSerializer(ModelSerializer):
-    worker = HiddenField(default=CurrentUserDefault())
+    worker = PrimaryKeyRelatedField(read_only=True)  # set by perform_create, returned in responses
     worker_detail = WorkerProfileDetailSerializer(source="worker", read_only=True)
+    description = CharField(allow_blank=True, required=False)
 
     class Meta:
         model = Service
@@ -144,8 +150,15 @@ class ServiceSerializer(ModelSerializer):
         min_price = data.get("min_price")
         max_price = data.get("max_price")
 
-        if min_price > max_price or min_price <= 0:
-            raise ValidationError("The error occurred in price!")
+        if min_price is None or max_price is None:
+            raise ValidationError("min_price va max_price kiritilishi shart!")
+
+        if min_price <= 0:
+            raise ValidationError("Minimal narx 0 dan katta bo'lishi kerak!")
+
+        if min_price > max_price:
+            raise ValidationError("Minimal narx maksimal narxdan katta bo'lmasligi kerak!")
+
         return data
 
 
@@ -192,10 +205,24 @@ class OrderImageSerializer(ModelSerializer):
 class OrderSerializer(ModelSerializer):
     client = HiddenField(default=CurrentUserDefault())
     order_images = OrderImageSerializer(many=True, read_only=True)
+    reviews = PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Order
-        fields = "__all__"
+        fields = [
+            "id",
+            "title",
+            "description",
+            "address",
+            "status",
+            "worker",
+            "service",
+            "client",
+            "created_at",
+            "updated_at",
+            "order_images",
+            "reviews",
+        ]
 
     def validate(self, data):
         service = data.get("service")
@@ -220,6 +247,7 @@ class ReviewImageSerializer(ModelSerializer):
 class ReviewSerializer(ModelSerializer):
     client = HiddenField(default=CurrentUserDefault())
     review_images = ReviewImageSerializer(many=True, read_only=True)
+    comment = CharField(allow_blank=True, required=False)
 
     class Meta:
         model = Review

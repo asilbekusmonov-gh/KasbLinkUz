@@ -54,7 +54,7 @@ from apps.tasks import send_order_placed_email, send_order_status_email, send_we
 
 
 class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 5
+    page_size = 3
     page_size_query_param = 'page_size'
     max_page_size = 100
 
@@ -75,8 +75,17 @@ class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelM
     def get_object(self):
         return self.request.user
 
-    @action(detail=False, methods=["get", "patch", "put"])
+    @action(detail=False, methods=["get", "patch", "put", "delete"])
     def me(self, request):
+        if request.method == "DELETE":
+            user = request.user
+            user.is_active = False
+            user.save()
+            return Response(
+                {"detail": "Akkaunt muvaffaqiyatli o'chirildi."},
+                status=status.HTTP_204_NO_CONTENT
+            )
+
         if request.method == "GET":
             serializer = self.get_serializer(request.user)
             return Response(serializer.data)
@@ -122,7 +131,7 @@ class WorkerProfileViewSet(ModelViewSet):
     permission_classes = [(IsAuthenticated & IsOwner & IsWorker) | AllowAny]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
-    filter_backends = [OrderingFilter, SearchFilter]
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filterset_class = WorkerFilter
     search_fields = ["user__username", "worker_services__category"]
     ordering_fields = ["rating"]
@@ -135,15 +144,32 @@ class WorkerProfileViewSet(ModelViewSet):
 
         return qs.select_related("user").all()
 
+    @action(detail=False, methods=["get", "patch"], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        """Get or update the current authenticated worker's profile."""
+        try:
+            profile = WorkerProfile.objects.select_related("user").get(user=request.user)
+        except WorkerProfile.DoesNotExist:
+            return Response({"detail": "Worker profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == "PATCH":
+            serializer = self.get_serializer(profile, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+
+        serializer = self.get_serializer(profile)
+        return Response(serializer.data)
+
 
 @extend_schema(tags=["Portfolio"])
 class PortfolioViewSet(ModelViewSet):
     queryset = Portfolio.objects.all()
     serializer_class = PortfolioSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    pagination_class = StandardCursorPagination
+    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ['category']
+    filterset_fields = ['category', 'worker']
     search_fields = ['title', 'description', 'worker__user__first_name', 'worker__user__last_name']
 
     def get_queryset(self):
@@ -151,6 +177,11 @@ class PortfolioViewSet(ModelViewSet):
         if self.request.query_params.get("me") == "true" or self.action in ["update", "partial_update", "destroy"]:
             return qs.filter(worker__user=self.request.user)
         return qs
+
+    def paginate_queryset(self, queryset):
+        if self.request.query_params.get("me") == "true":
+            return None
+        return super().paginate_queryset(queryset)
 
     def perform_create(self, serializer):
         if not hasattr(self.request.user, "worker_profile"):
@@ -193,9 +224,9 @@ class DistrictListApi(ListAPIView):
 class ServiceViewSet(ModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
-    pagination_class = StandardCursorPagination
+    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ['category']
+    filterset_fields = ['category', 'worker']
     search_fields = ['name', 'description']
 
     def get_permissions(self):
@@ -205,13 +236,23 @@ class ServiceViewSet(ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        if self.action in ["update", "partial_update", "destroy"]:
+        if self.request.query_params.get("me") == "true" or self.action in ["update", "partial_update", "destroy"]:
             return qs.filter(worker__user=self.request.user)
 
         return qs.select_related("worker", "category").all()
 
+    def paginate_queryset(self, queryset):
+        if self.request.query_params.get("me") == "true":
+            return None
+        return super().paginate_queryset(queryset)
+
     def perform_create(self, serializer):
-        worker_profile = self.request.user.worker_profile
+        try:
+            worker_profile = self.request.user.worker_profile
+        except Exception:
+            raise ValidationError(
+                {"detail": "Worker profile not found. Please complete your worker profile first."}
+            )
         return serializer.save(worker=worker_profile)
 
 
@@ -321,6 +362,9 @@ class ReviewViewSet(GenericViewSet, mixins.CreateModelMixin, mixins.ListModelMix
 
     def get_queryset(self):
         qs = super().get_queryset()
+        worker_id = self.request.query_params.get("worker_id")
+        if worker_id:
+            return qs.filter(order__worker_id=worker_id)
         return qs.filter(client=self.request.user)
 
 
