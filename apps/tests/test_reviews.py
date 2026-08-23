@@ -111,3 +111,52 @@ class TestReview:
         response = auth_client.post(url, {"order": order.id, "rating": 5, "comment": "Great service!"})
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_client_can_review_with_uploaded_images(self, completed_order, auth_client):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        image_file = SimpleUploadedFile(
+            name="test_review.jpg",
+            content=b"\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b",
+            content_type="image/jpeg",
+        )
+        url = reverse("review-list")
+        response = auth_client.post(
+            url,
+            {
+                "order": completed_order.id,
+                "rating": 5,
+                "comment": "Super job with picture!",
+                "uploaded_images": [image_file],
+            },
+            format="multipart",
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert len(response.data["review_images"]) == 1
+        assert "client_detail" in response.data
+        assert response.data["client_detail"]["username"] == "testclient"
+
+    def test_client_can_upload_review_image_endpoint(self, completed_order, auth_client):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from apps.models import Review
+
+        review = Review.objects.create(
+            order=completed_order,
+            client=completed_order.client,
+            rating=5,
+            comment="Awesome",
+        )
+
+        image_file = SimpleUploadedFile(
+            name="test_extra.jpg",
+            content=b"\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b",
+            content_type="image/jpeg",
+        )
+        url = reverse("review-image-list")
+        response = auth_client.post(
+            url,
+            {"review": review.id, "image": image_file},
+            format="multipart",
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["review"] == review.id

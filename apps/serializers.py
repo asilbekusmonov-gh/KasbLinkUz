@@ -1,5 +1,6 @@
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import CharField, CurrentUserDefault, HiddenField
+from rest_framework.fields import CharField, CurrentUserDefault, HiddenField, ListField, SerializerMethodField
 from rest_framework.fields import ImageField as DRFImageField
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer
@@ -75,7 +76,7 @@ class WorkerProfileSerializer(ModelSerializer):
         request = self.context.get("request")
 
         if request and request.method == "POST" and WorkerProfile.objects.filter(user=request.user).exists():
-                raise ValidationError("User can only have one worker profile")
+            raise ValidationError("User can only have one worker profile")
 
         return data
 
@@ -243,22 +244,45 @@ class ReviewImageSerializer(ModelSerializer):
         model = ReviewImage
         fields = "__all__"
 
+    def validate(self, data):
+        request = self.context.get("request")
+        review = data.get("review")
+        if request and review and review.client != request.user:
+            raise ValidationError("You can only add images to your own review.")
+        return data
+
 
 class ReviewSerializer(ModelSerializer):
     client = HiddenField(default=CurrentUserDefault())
+    client_detail = UserSerializer(source="client", read_only=True)
     review_images = ReviewImageSerializer(many=True, read_only=True)
+    uploaded_images = ListField(
+        child=DRFImageField(), write_only=True, required=False
+    )
     comment = CharField(allow_blank=True, required=False)
 
     class Meta:
         model = Review
-        fields = "__all__"
+        fields = [
+            "id",
+            "order",
+            "client",
+            "client_detail",
+            "rating",
+            "comment",
+            "review_images",
+            "uploaded_images",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ("created_at", "updated_at")
 
     def validate(self, data):
         order = data.get("order")
         request = self.context.get("request")
 
         if order and request and order.status != "completed":
-                raise ValidationError("Order is not completed yet")
+            raise ValidationError("Order is not completed yet")
 
         if Review.objects.filter(client=request.user, order=order).exists():
             raise ValidationError("You can not review twice")
@@ -267,6 +291,27 @@ class ReviewSerializer(ModelSerializer):
             raise ValidationError("You can review your own review")
 
         return data
+
+    def create(self, validated_data):
+        uploaded_images = validated_data.pop("uploaded_images", [])
+
+        request = self.context.get("request")
+        if request and request.FILES:
+            files = (
+                request.FILES.getlist("uploaded_images")
+                or request.FILES.getlist("images")
+                or request.FILES.getlist("review_images")
+            )
+            for f in files:
+                if f not in uploaded_images:
+                    uploaded_images.append(f)
+
+        review = Review.objects.create(**validated_data)
+
+        for image in uploaded_images:
+            ReviewImage.objects.create(review=review, image=image)
+
+        return review
 
 
 class FavouriteSerializer(ModelSerializer):
@@ -281,3 +326,4 @@ class NotificationSerializer(ModelSerializer):
     class Meta:
         model = Notification
         fields = "__all__"
+

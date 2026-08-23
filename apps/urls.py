@@ -1,5 +1,6 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.views import (
@@ -24,6 +25,7 @@ from apps.views import (
 router = DefaultRouter()
 
 router.register(r"users", UserViewSet, basename="user")
+router.register(r"category", CategoryListApi, basename="category")
 router.register(r"worker-profiles", WorkerProfileViewSet, basename="worker-profile")
 router.register(r"portfolio", PortfolioViewSet, basename="portfolio")
 router.register(r"services", ServiceViewSet, basename="service")
@@ -39,7 +41,6 @@ router.register(r"notifications", NotificationViewSet, basename="notification")
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("categories/", CategoryListApi.as_view(), name="categories"),
     path("cities/", CityListApi.as_view(), name="cities"),
     path("districts/", DistrictListApi.as_view(), name="districts"),
     path("auth/register/", RegisterView.as_view(), name="register"),

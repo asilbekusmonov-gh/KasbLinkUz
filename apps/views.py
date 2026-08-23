@@ -10,7 +10,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.pagination import CursorPagination, PageNumberPagination
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -192,10 +192,11 @@ class PortfolioViewSet(ModelViewSet):
 
 @extend_schema(tags=["Category"])
 @method_decorator(cache_page(60 * 15), name='dispatch')
-class CategoryListApi(ListAPIView):
+class CategoryListApi(ModelViewSet):
     queryset = Category.objects.defer("slug")
     serializer_class = CategoryModelSerializer
     permission_classes = [AllowAny]
+
 
 
 @extend_schema(tags=["Location"])
@@ -358,14 +359,17 @@ class OrderImageViewSet(ModelViewSet):
 class ReviewViewSet(GenericViewSet, mixins.CreateModelMixin, mixins.ListModelMixin):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         qs = super().get_queryset()
         worker_id = self.request.query_params.get("worker_id")
         if worker_id:
             return qs.filter(order__worker_id=worker_id)
-        return qs.filter(client=self.request.user)
+        if self.request.user and self.request.user.is_authenticated:
+            return qs.filter(client=self.request.user)
+        return qs.none()
 
 
 @extend_schema(tags=["ReviewImage"])
@@ -373,6 +377,7 @@ class ReviewImageViewSet(ModelViewSet):
     queryset = ReviewImage.objects.all()
     serializer_class = ReviewImageSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         qs = super().get_queryset()
