@@ -138,6 +138,7 @@ class TestReview:
 
     def test_client_can_upload_review_image_endpoint(self, completed_order, auth_client):
         from django.core.files.uploadedfile import SimpleUploadedFile
+
         from apps.models import Review
 
         review = Review.objects.create(

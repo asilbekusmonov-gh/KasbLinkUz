@@ -251,7 +251,7 @@ class ServiceViewSet(ModelViewSet):
     def perform_create(self, serializer):
         try:
             worker_profile = self.request.user.worker_profile
-        except Exception:
+        except AttributeError:
             raise ValidationError(
                 {"detail": "Worker profile not found. Please complete your worker profile first."}
             )
