@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import Q
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -318,29 +319,45 @@ class OrderViewSet(
 
     @action(detail=True, methods=["patch"], permission_classes=[IsAuthenticated, IsWorker])
     def accepted(self, request, pk=None):
-        order = self.get_object()
-        order.status = Order.Status.ACCEPTED
-        order.save()
+        with transaction.atomic():
+            # select_for_update() — DB darajasida qulflanadi.
+            # Agar ikkita worker bir vaqtda shu orderni accept qilmoqchi bo'lsa,
+            # biri kutadi, ikkinchisi tugagandan keyin davom etadi.
+            order = Order.objects.select_for_update().get(pk=pk)
+            if order.status != Order.Status.PENDING:
+                raise ValidationError(
+                    f"Faqat 'pending' statusdagi order qabul qilinishi mumkin. "
+                    f"Hozirgi status: '{order.status}'."
+                )
+            order.status = Order.Status.ACCEPTED
+            order.save(update_fields=["status", "updated_at"])
         send_order_status_email.delay(order.id, "accepted")
         return Response({"status": "accepted"})
 
     @action(detail=True, methods=["patch"], permission_classes=[IsAuthenticated, IsWorker])
     def completed(self, request, pk=None):
-        order = self.get_object()
-        if order.status != Order.Status.ACCEPTED:
-            raise ValidationError("Only accepted orders can be completed.")
-        order.status = Order.Status.COMPLETED
-        order.save()
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(pk=pk)
+            if order.status != Order.Status.ACCEPTED:
+                raise ValidationError(
+                    f"Faqat 'accepted' statusdagi order yakunlanishi mumkin. "
+                    f"Hozirgi status: '{order.status}'."
+                )
+            order.status = Order.Status.COMPLETED
+            order.save(update_fields=["status", "updated_at"])
         send_order_status_email.delay(order.id, "completed")
         return Response({"status": "completed"})
 
     @action(detail=True, methods=["patch"], permission_classes=[IsAuthenticated, IsClient])
     def cancelled(self, request, pk=None):
-        order = self.get_object()
-        if order.status == Order.Status.COMPLETED:
-            raise ValidationError("Order is already completed.")
-        order.status = Order.Status.CANCELLED
-        order.save()
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(pk=pk)
+            if order.status == Order.Status.COMPLETED:
+                raise ValidationError("Yakunlangan order bekor qilinishi mumkin emas.")
+            if order.status == Order.Status.CANCELLED:
+                raise ValidationError("Order allaqachon bekor qilingan.")
+            order.status = Order.Status.CANCELLED
+            order.save(update_fields=["status", "updated_at"])
         send_order_status_email.delay(order.id, "cancelled")
         return Response({"status": "cancelled"})
 
