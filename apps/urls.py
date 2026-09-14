@@ -25,7 +25,7 @@ from apps.views import (
 router = DefaultRouter()
 
 router.register(r"users", UserViewSet, basename="user")
-router.register(r"category", CategoryListApi, basename="category")
+router.register(r"categories", CategoryListApi, basename="category")
 router.register(r"worker-profiles", WorkerProfileViewSet, basename="worker-profile")
 router.register(r"portfolio", PortfolioViewSet, basename="portfolio")
 router.register(r"services", ServiceViewSet, basename="service")

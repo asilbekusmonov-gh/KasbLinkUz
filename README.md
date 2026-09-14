@@ -20,16 +20,6 @@ Clients discover and hire verified workers. Built with Django REST Framework.
 
 ---
 
-## 🌐 Live Demo
-
-| | URL                                                                 |
-|---|---------------------------------------------------------------------|
-| Live Platform | https://kasblinkuz-frontend-production.up.railway.app               |
-| Swagger Docs | https://kasblinkuz-production.up.railway.app/api/schema/swagger-ui/ |
-| Admin Panel | https://kasblinkuz-production.up.railway.app/admin/                 |
-
----
-
 ## What is KasbLink?
 
 KasbLink is a service marketplace platform — similar to Fiverr or Upwork — built for the Central Asian market. Workers list their services (design, development, translation, repair, etc.), clients browse and place orders, communicate via chat, and leave reviews after completion.

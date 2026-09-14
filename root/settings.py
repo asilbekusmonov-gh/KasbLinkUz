@@ -90,15 +90,38 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "fallback-secret-key-for-dev")
 
 DATABASES = {"default": dj_database_url.config(default=os.getenv("DATABASE_URL"), conn_max_age=600)}
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+# Caching.
+#
+# Views wrapped in @cache_page (categories, cities, districts) hit this backend on
+# every request. With a Redis backend and no Redis running, django-redis raises and
+# those endpoints return 500 instead of data -- which is a terrible trade for a cache.
+#
+# So: use Redis only when explicitly asked for (USE_REDIS_CACHE=1, or any non-DEBUG
+# deployment), and never let a cache outage take an endpoint down.
+USE_REDIS_CACHE = os.getenv("USE_REDIS_CACHE", "").lower() in ("1", "true", "yes") or not DEBUG
+
+if USE_REDIS_CACHE:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": os.getenv("REDIS_CACHE_URL") or os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                # Degrade to "no cache" instead of erroring when Redis is unreachable.
+                "IGNORE_EXCEPTIONS": True,
+            },
         }
     }
-}
+else:
+    # Local development default: in-process cache, no external service required.
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "kasblink-locmem",
+        }
+    }
+
+DJANGO_REDIS_IGNORE_EXCEPTIONS = True
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
