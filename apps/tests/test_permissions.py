@@ -52,7 +52,7 @@ class TestPermissions:
         assert response.status_code == status.HTTP_200_OK
 
     def test_unauthenticated_can_browse_categories(self, api_client):
-        url = reverse("categories")
+        url = reverse("category-list")
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
 

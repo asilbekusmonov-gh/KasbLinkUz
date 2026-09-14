@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django_filters.rest_framework import DjangoFilterBackend
@@ -323,7 +324,16 @@ class OrderViewSet(
             # select_for_update() — DB darajasida qulflanadi.
             # Agar ikkita worker bir vaqtda shu orderni accept qilmoqchi bo'lsa,
             # biri kutadi, ikkinchisi tugagandan keyin davom etadi.
-            order = Order.objects.select_for_update().get(pk=pk)
+            # ⚠️ SECURITY FIX: bu yerda avval `Order.objects...get(pk=pk)`
+            # ishlatilardi — bu get_queryset() orqali qo'llaniladigan
+            # egalik filtrini (worker faqat o'z buyurtmalarini, client
+            # faqat o'zinikini) butunlay chetlab o'tardi. Natijada
+            # istalgan worker istalgan boshqa workerning buyurtmasini
+            # "accept"/"complete" qila olardi (jonli testda tasdiqlandi:
+            # boshqa worker begona buyurtmani 200 status bilan qabul
+            # qilib oldi, 403/404 o'rniga). Endi self.get_queryset()
+            # orqali scoping qo'llaniladi — begona buyurtma 404 qaytaradi.
+            order = get_object_or_404(self.get_queryset().select_for_update(), pk=pk)
             if order.status != Order.Status.PENDING:
                 raise ValidationError(
                     f"Faqat 'pending' statusdagi order qabul qilinishi mumkin. "
@@ -337,7 +347,16 @@ class OrderViewSet(
     @action(detail=True, methods=["patch"], permission_classes=[IsAuthenticated, IsWorker])
     def completed(self, request, pk=None):
         with transaction.atomic():
-            order = Order.objects.select_for_update().get(pk=pk)
+            # ⚠️ SECURITY FIX: bu yerda avval `Order.objects...get(pk=pk)`
+            # ishlatilardi — bu get_queryset() orqali qo'llaniladigan
+            # egalik filtrini (worker faqat o'z buyurtmalarini, client
+            # faqat o'zinikini) butunlay chetlab o'tardi. Natijada
+            # istalgan worker istalgan boshqa workerning buyurtmasini
+            # "accept"/"complete" qila olardi (jonli testda tasdiqlandi:
+            # boshqa worker begona buyurtmani 200 status bilan qabul
+            # qilib oldi, 403/404 o'rniga). Endi self.get_queryset()
+            # orqali scoping qo'llaniladi — begona buyurtma 404 qaytaradi.
+            order = get_object_or_404(self.get_queryset().select_for_update(), pk=pk)
             if order.status != Order.Status.ACCEPTED:
                 raise ValidationError(
                     f"Faqat 'accepted' statusdagi order yakunlanishi mumkin. "
@@ -351,7 +370,16 @@ class OrderViewSet(
     @action(detail=True, methods=["patch"], permission_classes=[IsAuthenticated, IsClient])
     def cancelled(self, request, pk=None):
         with transaction.atomic():
-            order = Order.objects.select_for_update().get(pk=pk)
+            # ⚠️ SECURITY FIX: bu yerda avval `Order.objects...get(pk=pk)`
+            # ishlatilardi — bu get_queryset() orqali qo'llaniladigan
+            # egalik filtrini (worker faqat o'z buyurtmalarini, client
+            # faqat o'zinikini) butunlay chetlab o'tardi. Natijada
+            # istalgan worker istalgan boshqa workerning buyurtmasini
+            # "accept"/"complete" qila olardi (jonli testda tasdiqlandi:
+            # boshqa worker begona buyurtmani 200 status bilan qabul
+            # qilib oldi, 403/404 o'rniga). Endi self.get_queryset()
+            # orqali scoping qo'llaniladi — begona buyurtma 404 qaytaradi.
+            order = get_object_or_404(self.get_queryset().select_for_update(), pk=pk)
             if order.status == Order.Status.COMPLETED:
                 raise ValidationError("Yakunlangan order bekor qilinishi mumkin emas.")
             if order.status == Order.Status.CANCELLED:
